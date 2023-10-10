@@ -9,6 +9,18 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Used librarys
+```{r}
+library(readr)
+```
+
+
+## Import dataset
+```{r show_col_types = False}
+loan_sample <- read_csv("loan_sample_8.csv")
+```
+
+
 ## Excercise 1
 
 ### Describe the data. Specifically:
@@ -18,3 +30,44 @@ knitr::opts_chunk$set(echo = TRUE)
 – Summarize the variables. Discuss the summary statistics obtained.
 – Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
 – Check the distribution of the numeric variables in the data set (include different visual representations).
+
+
+
+• Investigating outliers with a box plot
+Elaborate your view on how to proceed in dealing with the outliers and – if necessary – take appropriate action.
+```{r}
+
+
+```
+
+• Investigating the distribution of the numeric features per the two levels of our target feature
+(i.e. default vs non-default). Discuss the visualizations. Which variables seem to be relevant in predicting the target feature?
+```{r}
+
+
+```
+
+• Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
+```{r}
+
+
+```
+
+• Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
+```{r}
+
+
+```
+
+• Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
+```{r}
+
+
+```
+
+• Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
+```{r}
+
+
+```
+
