@@ -1,0 +1,20 @@
+---
+title: "Credit Scoring SBD2"
+author: "Abishan Arumugavel"
+date: "2023-10-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Excercise 1
+
+### Describe the data. Specifically:
+
+– Check and report the structure of the data set.
+– How many numeric and how many categorical variables are included in the data? What categorical variable has the most levels in it?
+– Summarize the variables. Discuss the summary statistics obtained.
+– Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
+– Check the distribution of the numeric variables in the data set (include different visual representations).
