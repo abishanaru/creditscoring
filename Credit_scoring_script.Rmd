@@ -16,7 +16,7 @@ library(readr)
 
 
 ## Import dataset
-```{r show_col_types = False}
+```{r}
 loan_sample <- read_csv("loan_sample_8.csv")
 ```
 
