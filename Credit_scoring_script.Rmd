@@ -1,6 +1,6 @@
 ---
 title: "Credit Scoring SBD2"
-author: "Abishan Arumugavel, Vladyslav Gorbunov"
+author: "Abishan Arumugavel, Vladyslav Gorbunov, Gilles Nikles"
 date: "2023-10-10"
 output: html_document
 ---
