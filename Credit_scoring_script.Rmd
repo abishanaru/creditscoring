@@ -85,14 +85,10 @@ Elaborate your view on how to proceed in dealing with the outliers and – if ne
 ```{r}
 # Create a copy of original data
 loan_data <- loan_sample
+```
 
-# Convert categorical variables to factors
-loan_data$grade <- as.factor(loan_data$grade)
-loan_data$home_ownership <- as.factor(loan_data$home_ownership)
-loan_data$verification_status <- as.factor(loan_data$verification_status)
-loan_data$purpose <- as.factor(loan_data$purpose)
-loan_data$application_type <- as.factor(loan_data$application_type)
 
+```{r}
 # Set random seed to make results reproducible
 set.seed(5)
 
@@ -109,19 +105,14 @@ test_data <- loan_data[-splitIndex, ]
 # Checking if the data distribution in the test_data
 PercTable(test_data$Status)
 
-
-# AB HIER NOCH EINMAL KONTROLLIEREN
-
-
-
 # Train a logistic regression model (all variables as input)
 model <- glm(Status ~ ., data = train_data, family = "binomial")
 
 # Display the coefficients
-print(summary(model)$coefficients)
+summary(model)
 
 # Predict probabilities on the test set
-predictions_prob <- predict(model, newdata = test_data, type = "response")
+predictions_prob <- predict(model, type = "response", newdata = test_data)
 
 # ROC curve using pROC
 roc_obj <- roc(test_data$Status, predictions_prob)
@@ -142,3 +133,13 @@ print(cm)
 accuracy <- sum(diag(cm$table)) / sum(cm$table)
 print(paste("Overall Accuracy: ", accuracy))
 ```
+# Excercise 3
+Habe bereits versucht mit factors die accuracy des Models zu verbessern. Hat jedoch keinen Einfluss.
+Mann könnte einen kurzen Text darüber schreiben und erklären, dass wir es versucht haben.
+
+# Convert categorical variables to factors
+loan_data$grade <- as.factor(loan_data$grade)
+loan_data$home_ownership <- as.factor(loan_data$home_ownership)
+loan_data$verification_status <- as.factor(loan_data$verification_status)
+loan_data$purpose <- as.factor(loan_data$purpose)
+loan_data$application_type <- as.factor(loan_data$application_type)
