@@ -263,6 +263,7 @@ Balancing a dataset is important for training classification models because it p
 – Produce the confusion matrix and interpret the results.
 – Report the AUC values and the overall accuracy and interpret the results.
 
+## Import of Libraies (Später nach oben verschieben!!!)
 ```{r}
 libraries = c("readr", "ggplot2","Boruta", "ROCR", "caret", "pROC", "dplyr", "ROSE", "corrplot", "DescTools", "ggpubr", "tidyverse", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr")
  
@@ -273,15 +274,16 @@ lapply(libraries, function(x) if (!(x %in% installed.packages())) {
 lapply(libraries, library, quietly = TRUE, character.only = TRUE)
 
 ```
+
+
 ```{r}
 # Set seed for reproducibility
 set.seed(7)
 
-# Assuming your dataset is named 'new_balance_data' and the target variable column is 'Status'
 # Split the data into training (70%) and testing (30%) sets
-splitIndex <- createDataPartition(new_balance_data$Status, p = 0.7, list = FALSE)
-training_set <- new_balance_data[splitIndex,]
-testing_set <- new_balance_data[-splitIndex,]
+splitIndex <- createDataPartition(loan_sample_under$Status, p = 0.7, list = FALSE)
+training_set <- loan_sample_under[splitIndex,]
+testing_set <- loan_sample_under[-splitIndex,]
 ```
 
 
