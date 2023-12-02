@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Used librarys
 ```{r}
 library(readr)
-
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
@@ -22,6 +21,7 @@ library(caret)
 library(DescTools)
 library(pROC)
 library(ROCR)
+library(ROSE)
 
 ```
 
@@ -222,16 +222,16 @@ Moderate to Weak Correlations: Values that are closer to 0 indicate a weaker rel
 ### 1.6: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
 ```{r}
 # Create a ggplot object with loan amount and annual income
-p <- ggplot(loan_sample, aes(x = annual_inc, y = loan_amnt)) +
-  geom_point(alpha = 0.5) + 
-  labs(title = "Scatter plot of Loan Amount vs Annual Income",
-       x = "Annual Income",
-       y = "Loan Amount") +
-  theme_minimal()
+#p <- ggplot(loan_sample, aes(x = annual_inc, y = loan_amnt)) +
+#  geom_point(alpha = 0.5) + 
+#  labs(title = "Scatter plot of Loan Amount vs Annual Income",
+#       x = "Annual Income",
+#       y = "Loan Amount") +
+#  theme_minimal()
 
 # Convert ggplot object to a plotly object
-p_interactive <- ggplotly(p)
-p_interactive
+#p_interactive <- ggplotly(p)
+#p_interactive
 
 ```
 
@@ -239,14 +239,17 @@ The areas of high density indicate common combinations of income and loan amount
 
 ### 1.7: Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
 ```{r}
-loan_data_balanced <- ovun.sample(Status ~ ., data=loan_sample, method = "under")
-data_under <- data.frame(data_balanced[["data"]])
+# Create a copy of the original dataset
+loan_sample_original <- loan_sample
+
+loan_sample_balanced <- ovun.sample(Status ~ ., data=loan_sample, method = "under")
+loan_sample_under <- data.frame(loan_sample_balanced[["data"]])
 
 # Plot the balance
-library(ggplot2)
-ggplot(loan_sample_balanced, aes(x = as.factor(Status))) +
+ggplot(loan_sample_under, aes(x = Status, fill = Status)) +
   geom_bar() +
-  labs(x = "Status", y = "Count", title = "Count of loan status in the balanced dataset") +
+  ylab("Count") +
+  xlab("Status of the loan") +
   theme_minimal()
 ```
 Balancing a dataset is important for training classification models because it prevents the model from being biased towards the majority class and potentially ignoring the minority class. This is particularly true for datasets where the outcome class of interest (e.g., default on a loan) is much less common than the non-interest class (e.g., non-default). Balancing helps to improve the generalization of the model and its performance on unseen data, especially for the minority class.
@@ -259,14 +262,8 @@ Balancing a dataset is important for training classification models because it p
 – Plot the ROC and the Precision/Recall Curve and interpret the results.
 – Produce the confusion matrix and interpret the results.
 – Report the AUC values and the overall accuracy and interpret the results.
-```{r}
-# Create a copy of balanced data
-loan_data_balanced_copy <-  loan_sample_balanced
-```
 
 ```{r}
-knitr::opts_chunk$set(echo = TRUE)
-
 libraries = c("readr", "ggplot2","Boruta", "ROCR", "caret", "pROC", "dplyr", "ROSE", "corrplot", "DescTools", "ggpubr", "tidyverse", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr")
  
 lapply(libraries, function(x) if (!(x %in% installed.packages())) {
