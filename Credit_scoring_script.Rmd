@@ -84,8 +84,68 @@ Elaborate your view on how to proceed in dealing with the outliers and – if ne
 – Report the AUC values and the overall accuracy and interpret the results.
 ```{r}
 # Create a copy of original data
-loan_data <- loan_sample
+loan_data <-  loan_sample
 ```
+
+
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+libraries = c("readr", "ggplot2","Boruta", "ROCR", "caret", "pROC", "dplyr", "ROSE", "corrplot", "DescTools", "ggpubr", "tidyverse", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr")
+ 
+lapply(libraries, function(x) if (!(x %in% installed.packages())) {
+  install.packages(x)
+})
+
+lapply(libraries, library, quietly = TRUE, character.only = TRUE)
+
+#rm(list=ls())
+
+set.seed(7)
+
+```
+
+
+Using the PercTable function, we can also obtain both the count and the percentage. What would you say? Is this a well-balanced data set? 
+
+```{r}
+PercTable(loan_data$Status)
+
+
+ggplot(loan_data, aes(x = Status, fill = Status)) +
+  geom_bar() +
+  ylab("Count") +
+  xlab("Status of the loan")
+```
+
+The data set is highly imbalanced. What is a good way to deal with this issue? 
+
+One solution is to perform under- or over- sampling.
+
+In the next step, we carry-out undersampling using the ROSE package.
+
+
+```{r}
+set.seed(7)
+data_balanced <- ovun.sample(Status ~ ., data=loan_data, method = "under")
+data_under <- data.frame(data_balanced[["data"]])
+```
+
+Let's visualize our changed dataset. 
+```{r}
+ggplot(data_under, aes(x = Status, fill = Status)) +
+  geom_bar() +
+  ylab("Count") +
+  xlab("Status of the loan")
+```
+
+
+
+
+
+
+
 
 
 ```{r}
