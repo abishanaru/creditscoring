@@ -1,6 +1,6 @@
 ---
 title: "Credit Scoring SBD2"
-author: "Abishan Arumugavel, Vladyslav Gorbunov, Gilles Nikles"
+author: "Abishan Arumugavel, Vladyslav Gorbunov, Gilles Nikles, Josua Reich"
 date: "2023-10-10"
 output: html_document
 ---
@@ -12,11 +12,17 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Used librarys
 ```{r}
 library(readr)
+
+library(tidyverse)
+library(ggplot2)
 library(dplyr)
+library(reshape2)
+library(plotly)
 library(caret)
 library(DescTools)
 library(pROC)
 library(ROCR)
+
 ```
 
 
@@ -28,53 +34,234 @@ loan_sample <- read_csv("loan_sample_8.csv")
 
 ## Excercise 1
 
-### Describe the data. Specifically:
+### 1.1 Describe the data. Specifically:
 
-– Check and report the structure of the data set.
-– How many numeric and how many categorical variables are included in the data? What categorical variable has the most levels in it?
-– Summarize the variables. Discuss the summary statistics obtained.
-– Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
-– Check the distribution of the numeric variables in the data set (include different visual representations).
+#### 1.1.1: Check and report the structure of the data set.
+```{r show_col_types = False}
+str(loan_sample)
+```
+#### 1.1.2: How many numeric and how many categorical variables are included in the data? What categorical variable has the most levels in it?
+```{r show_col_types = False}
+numeric_vars_count <- sum(sapply(loan_sample, is.numeric))
+numeric_vars_count
+categorical_vars_count <- sum(sapply(loan_sample, is.character))
+categorical_vars_count
+```
+```{r show_col_types = False}
+# Categorial Label with the most Levels
+categorical_levels <- sapply(loan_sample, function(x) if(is.character(x)) length(unique(x)) else NA)
+cat_var_most_levels <- names(which.max(categorical_levels))
+cat_var_most_levels
+```
+#### 1.1.3: Summarize the variables. Discuss the summary statistics obtained.
+```{r show_col_types = False}
+# Categorial Label with the most Levels
+summary(loan_sample)
+```
+Our loan data includes information on 40,000 loans. The average loan size is about $11,687, but this number can be as low as $1,000 or as high as $40,000, showing that loan amounts are different for different people. The average interest rate on a loan is 12.62%, but some people get lower rates like 5.31%, and others get higher rates up to 27.49%. This shows there are many different interest rates that people are getting. People who have taken out loans make an average of $63,400 a year, but there is a big difference in how much money people make. Some make more, and some make less. The debt-to-income ratio (DTI) tells us how much debt people have compared to their income. On average, this number is 18.22% for the loans we looked at. Looking at how many credit lines people have open, the average is 10, but in total, they might have had up to 21 over time. This tells us about how many loans or credit cards people might be using or have used before. The average amount people owe on their credit lines is $11,995, and they use about half of the credit available to them. This tells us about how much of their available loan money they are using. People also pay about $1,818 in interest on average. This is extra money they pay in addition to the loan they took out. When we look at all the loans and credit people have, the total amount they owe on average is $99,100. This shows that people have a lot of loans or owe a lot of money on their credit lines. Finally, the average limit people have on their credit lines is $24,194. This is how much the bank or loan company lets them borrow in total.
+
+#### 1.1.4: Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
+```{r show_col_types = False}
+ggplot(loan_sample, aes(x = Status)) + 
+  geom_bar() +
+  labs(title = 'Distribution of Target Variable (Status)', x = 'Status', y = 'Count')
+```
 
 
+1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
+```{r show_col_types = False}
+# Histograms
+loan_sample %>% 
+  select_if(is.numeric) %>% 
+  gather(key = "variable", value = "value") %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(bins = 30) +
+  facet_wrap(~variable, scales = 'free_x') +
+  theme_minimal()
+```
+```{r show_col_types = False}
+#Boxplots
+loan_sample %>% 
+  select_if(is.numeric) %>% 
+  gather(key = "variable", value = "value") %>%
+  ggplot(aes(y = value)) +
+  geom_boxplot() +
+  facet_wrap(~variable, scales = 'free') +
+  theme_minimal()
+```
 
-• Investigating outliers with a box plot
+
+### 1.2: Investigating outliers with a box plot
 Elaborate your view on how to proceed in dealing with the outliers and – if necessary – take appropriate action.
 ```{r}
+# Create a boxplot for all numeric variables
+loan_sample %>%
+  select_if(is.numeric) %>%
+  gather(key = "variable", value = "value") %>%
+  ggplot(aes(x = variable, y = value)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 65, hjust = 1)) # Rotate x labels for readability
 
+# Cap the annual income at the 99th percentile:
 
+income_99th <- quantile(loan_sample$annual_inc, 0.99) # Calculate the 99th percentile
+loan_sample$annual_inc <- pmin(loan_sample$annual_inc, income_99th) # Cap at the 99th percentile
+
+# If you decide to remove outliers instead:
+# Define a function to identify outliers
+identify_outliers <- function(x) {
+  qnt <- quantile(x, probs=c(.25, .75), na.rm = T)
+  caps <- quantile(x, probs=c(.01, .99), na.rm = T)
+  H <- 1.5 * IQR(x, na.rm = T)
+  x[x < (qnt[1] - H)] <- NA
+  x[x > (qnt[2] + H)] <- NA
+  x[x < caps[1]] <- NA # Optional: remove below 1st percentile
+  x[x > caps[2]] <- NA # Optional: remove above 99th percentile
+  return(x)
+}
+
+# Apply the function to your data
+loan_sample$annual_inc <- identify_outliers(loan_sample$annual_inc)
+# Then you may want to remove the NAs if you decided to set outliers as NA
+loan_sample <- loan_sample %>% drop_na(annual_inc)
 ```
 
-• Investigating the distribution of the numeric features per the two levels of our target feature
+### 1.3: Investigating the distribution of the numeric features per the two levels of our target feature
 (i.e. default vs non-default). Discuss the visualizations. Which variables seem to be relevant in predicting the target feature?
 ```{r}
-
-
+# Plotting the density of numeric features by the levels of the target feature
+loan_sample %>%
+  select_if(is.numeric) %>%
+  gather(key = "variable", value = "value", -Status) %>%
+  ggplot(aes(x = value, fill = as.factor(Status))) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~variable, scales = 'free_x') +
+  theme_minimal() +
+  labs(title = "Density Plots of Numeric Variables by Status", x = "Value", y = "Density")
 ```
+Variables to pay attention to would be those with:
 
-• Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
+- Distinct peaks at different values for each group.
+- Varying spreads (some might be more tightly clustered for one group and more spread out for the other).
+- Different skewness (one group could be skewed left or right compared to the other).
+
+Loan Amount (loan_amnt): If defaults show consistently higher or lower loan amounts than non-defaults, this variable might be predictive. The relevance would be stronger if there is a noticeable difference in the interquartile range between the two statuses.
+
+Interest Rate (int_rate): Higher interest rates may be associated with higher default risk, so if defaults have higher median interest rates than non-defaults, this variable could be important.
+
+Annual Income (annual_inc): While high-income individuals can also default, a general pattern where lower-income applicants have a higher proportion of defaults could signal relevance.
+
+Debt-to-Income Ratio (dti): A higher DTI often indicates financial strain, which could increase default risk. If the DTI is higher for defaults, it would be a significant predictor.
+
+Open Credit Lines (open_acc): This variable, by itself, may not be as predictive unless it shows a consistent pattern with default status. However, it could become relevant when combined with other variables like DTI.
+
+Revolving Balance (revol_bal): High revolving balances could indicate potential financial stress or aggressive credit use, which might correlate with default risk.
+
+Revolving Utilization Rate (revol_util): Higher utilization rates are often seen as a red flag for credit risk, making this variable potentially predictive.
+
+Total Number of Credit Lines (total_acc): Like open credit lines, the total number of credit lines might provide insight when analyzed in conjunction with other variables.
+
+Total Received Interest (total_rec_int): If defaults tend to accumulate more interest, this suggests they may have longer-standing debts or higher rates, which could be predictive.
+
+Total Current Balance (tot_cur_bal) and Total Revolving High Credit/Credit Limit (total_rev_hi_lim): These variables might indicate the overall credit engagement and financial leverage of a borrower. Large balances and high credit limits, if associated with defaults, could suggest that borrowers with higher credit engagements are at a higher risk of default.
+
+### 1.4: Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
 ```{r}
-
+# Generate a bar plot for each categorical variable
+categorical_vars <- c("home_ownership", "verification_status", "purpose", "addr_state")
+# Loop over categorical variables and plot using aes() and without aes_string()
+for (cat_var in categorical_vars) {
+  # Check if the column exists to avoid errors
+  if (!cat_var %in% names(loan_sample)) {
+    message(paste("Skipping", cat_var, "as it is not found in the dataset."))
+    next
+  }
+  
+  # Create the plot
+  plot <- loan_sample %>%
+    group_by(.data[[cat_var]], Status) %>%
+    summarise(Count = n(), .groups = 'drop') %>%
+    ggplot(aes(x = .data[[cat_var]], y = Count, fill = as.factor(Status))) +
+    geom_bar(stat = "identity", position = position_dodge()) +
+    labs(title = paste("Bar plot of", cat_var, "by Status"), x = cat_var, y = "Count") +
+    scale_fill_discrete(name = "Status") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) # Rotate x labels for readability
+  
+  print(plot) # Print the plot
+}
 
 ```
 
-• Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
+### 1.5: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
 ```{r}
+# Calculate the correlation matrix of numeric features
+numeric_vars <- loan_sample %>% select_if(is.numeric)
+cor_matrix <- cor(numeric_vars, use = "complete.obs")  # use="complete.obs" handles missing values by case-wise deletion
 
+# Melt the correlation matrix into long format
+melted_cor_matrix <- melt(cor_matrix)
+
+# Create a heatmap of the correlation matrix
+ggplot(data = melted_cor_matrix, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1),
+        axis.text.y = element_text(size = 12)) +
+  coord_fixed()
 
 ```
 
-• Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
+Strong Correlations: Variables with high absolute values of correlation (close to 1 or -1) are considered strongly correlated. These could indicate a redundant or derived relationship where one variable can be predicted from the other.
+
+Moderate to Weak Correlations: Values that are closer to 0 indicate a weaker relationship.
+
+### 1.6: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
 ```{r}
+# Create a ggplot object with loan amount and annual income
+p <- ggplot(loan_sample, aes(x = annual_inc, y = loan_amnt)) +
+  geom_point(alpha = 0.5) + 
+  labs(title = "Scatter plot of Loan Amount vs Annual Income",
+       x = "Annual Income",
+       y = "Loan Amount") +
+  theme_minimal()
 
+# Convert ggplot object to a plotly object
+p_interactive <- ggplotly(p)
+p_interactive
 
 ```
 
-• Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
+The areas of high density indicate common combinations of income and loan amounts, which could suggest standard loan products or typical borrower profiles. A wide range of incomes with a relatively narrow range of loan amounts might suggest that the loan amount is less sensitive to income past a certain threshold.
+
+### 1.7: Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
 ```{r}
+# First, split the data into two subsets based on the target variable levels.
+defaulters <- loan_sample[loan_sample$Status == 1, ]
+non_defaulters <- loan_sample[loan_sample$Status == 0, ]
+
+# Now, undersample the larger group to the size of the smaller one.
+set.seed(123) # Set seed for reproducibility
+non_defaulters_balanced <- non_defaulters[sample(1:nrow(non_defaulters), size = nrow(defaulters)), ]
+
+# Combine the undersampled non-defaulters with the defaulters to create a balanced dataset.
+loan_sample_balanced <- rbind(defaulters, non_defaulters_balanced)
 
 
+# Check the balance of the new dataset
+table(loan_sample_balanced$Status)
+
+# Plot the balance
+library(ggplot2)
+ggplot(loan_sample_balanced, aes(x = as.factor(Status))) +
+  geom_bar() +
+  labs(x = "Status", y = "Count", title = "Count of loan status in the balanced dataset") +
+  theme_minimal()
 ```
+Balancing a dataset is important for training classification models because it prevents the model from being biased towards the majority class and potentially ignoring the minority class. This is particularly true for datasets where the outcome class of interest (e.g., default on a loan) is much less common than the non-interest class (e.g., non-default). Balancing helps to improve the generalization of the model and its performance on unseen data, especially for the minority class.
 
 
 ## Excercise 2
@@ -139,12 +326,6 @@ ggplot(data_under, aes(x = Status, fill = Status)) +
   ylab("Count") +
   xlab("Status of the loan")
 ```
-
-
-
-
-
-
 
 
 
