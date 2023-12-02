@@ -196,22 +196,22 @@ for (cat_var in categorical_vars) {
 ### 1.5: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
 ```{r}
 # Calculate the correlation matrix of numeric features
-numeric_vars <- loan_sample %>% select_if(is.numeric)
-cor_matrix <- cor(numeric_vars, use = "complete.obs")  # use="complete.obs" handles missing values by case-wise deletion
+#numeric_vars <- loan_sample %>% select_if(is.numeric)
+#cor_matrix <- cor(numeric_vars, use = "complete.obs")  # use="complete.obs" handles missing values by case-wise deletion
 
 # Melt the correlation matrix into long format
-melted_cor_matrix <- melt(cor_matrix)
 
+#melted_cor_matrix <- melt(cor_matrix)
 # Create a heatmap of the correlation matrix
-ggplot(data = melted_cor_matrix, aes(Var1, Var2, fill = value)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1),
-        axis.text.y = element_text(size = 12)) +
-  coord_fixed()
+#ggplot(data = melted_cor_matrix, aes(Var1, Var2, fill = value)) +
+#  geom_tile(color = "white") +
+#  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+#                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+#                       name="Pearson\nCorrelation") +
+#  theme_minimal() +
+#  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1),
+#        axis.text.y = element_text(size = 12)) +
+#  coord_fixed()
 
 ```
 
@@ -310,8 +310,10 @@ Finally, we can check for multicollinearity which can also be part of the featur
 
 In the next step, we look at the correlations that emerge between the variables. Which correlation are you worried about? 
 ```{r}
-data_new_under <- loan_sample_under
-correlations = cor(data_new_under[-c(20:24)])
+# Convert categorical variables to factors
+
+
+correlations = cor(loan_sample_under[-c(3,4,6,7,14)])
 corrplot(correlations) 
 ```
 
@@ -384,9 +386,4 @@ print(paste("Overall Accuracy: ", accuracy))
 Habe bereits versucht mit factors die accuracy des Models zu verbessern. Hat jedoch keinen Einfluss.
 Mann könnte einen kurzen Text darüber schreiben und erklären, dass wir es versucht haben.
 
-# Convert categorical variables to factors
-loan_data$grade <- as.factor(loan_data$grade)
-loan_data$home_ownership <- as.factor(loan_data$home_ownership)
-loan_data$verification_status <- as.factor(loan_data$verification_status)
-loan_data$purpose <- as.factor(loan_data$purpose)
-loan_data$application_type <- as.factor(loan_data$application_type)
+
