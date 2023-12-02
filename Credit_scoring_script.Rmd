@@ -239,20 +239,8 @@ The areas of high density indicate common combinations of income and loan amount
 
 ### 1.7: Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
 ```{r}
-# First, split the data into two subsets based on the target variable levels.
-defaulters <- loan_sample[loan_sample$Status == 1, ]
-non_defaulters <- loan_sample[loan_sample$Status == 0, ]
-
-# Now, undersample the larger group to the size of the smaller one.
-set.seed(123) # Set seed for reproducibility
-non_defaulters_balanced <- non_defaulters[sample(1:nrow(non_defaulters), size = nrow(defaulters)), ]
-
-# Combine the undersampled non-defaulters with the defaulters to create a balanced dataset.
-loan_sample_balanced <- rbind(defaulters, non_defaulters_balanced)
-
-
-# Check the balance of the new dataset
-table(loan_sample_balanced$Status)
+loan_data_balanced <- ovun.sample(Status ~ ., data=loan_sample, method = "under")
+data_under <- data.frame(data_balanced[["data"]])
 
 # Plot the balance
 library(ggplot2)
@@ -266,15 +254,15 @@ Balancing a dataset is important for training classification models because it p
 
 ## Excercise 2
 • Train and test a logistic classifier. Specifically:
-– Divide the sample into training and testingset using 70% for training the algorithm. – Train the classifier and report the coefficients obtained and interpret the results. – Plot the ROC and the Precision/Recall Curve and interpret the results.
+– Divide the sample into training and testing set using 70% for training the algorithm. 
+– Train the classifier and report the coefficients obtained and interpret the results. 
+– Plot the ROC and the Precision/Recall Curve and interpret the results.
 – Produce the confusion matrix and interpret the results.
 – Report the AUC values and the overall accuracy and interpret the results.
 ```{r}
-# Create a copy of original data
-loan_data <-  loan_sample
+# Create a copy of balanced data
+loan_data_balanced_copy <-  loan_sample_balanced
 ```
-
-
 
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
@@ -287,10 +275,16 @@ lapply(libraries, function(x) if (!(x %in% installed.packages())) {
 
 lapply(libraries, library, quietly = TRUE, character.only = TRUE)
 
-#rm(list=ls())
-
+```
+```{r}
+# Set seed for reproducibility
 set.seed(7)
 
+# Assuming your dataset is named 'new_balance_data' and the target variable column is 'Status'
+# Split the data into training (70%) and testing (30%) sets
+splitIndex <- createDataPartition(new_balance_data$Status, p = 0.7, list = FALSE)
+training_set <- new_balance_data[splitIndex,]
+testing_set <- new_balance_data[-splitIndex,]
 ```
 
 
@@ -314,7 +308,6 @@ In the next step, we carry-out undersampling using the ROSE package.
 
 
 ```{r}
-set.seed(7)
 data_balanced <- ovun.sample(Status ~ ., data=loan_data, method = "under")
 data_under <- data.frame(data_balanced[["data"]])
 ```
@@ -330,8 +323,6 @@ ggplot(data_under, aes(x = Status, fill = Status)) +
 
 
 ```{r}
-# Set random seed to make results reproducible
-set.seed(5)
 
 # Split the data into training(70%) and testing(30%) data sets.
 splitIndex <- createDataPartition(y = loan_data$Status, p = 0.7, list = FALSE)
