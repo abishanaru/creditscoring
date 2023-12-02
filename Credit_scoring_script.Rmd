@@ -287,40 +287,14 @@ testing_set <- loan_sample_under[-splitIndex,]
 ```
 
 
-Using the PercTable function, we can also obtain both the count and the percentage. What would you say? Is this a well-balanced data set? 
-
-```{r}
-PercTable(loan_data$Status)
-
-
-ggplot(loan_data, aes(x = Status, fill = Status)) +
-  geom_bar() +
-  ylab("Count") +
-  xlab("Status of the loan")
-```
-
-The data set is highly imbalanced. What is a good way to deal with this issue? 
-
-One solution is to perform under- or over- sampling.
-
-In the next step, we carry-out undersampling using the ROSE package.
-
-
-```{r}
-data_balanced <- ovun.sample(Status ~ ., data=loan_data, method = "under")
-data_under <- data.frame(data_balanced[["data"]])
-```
-
-Let's visualize our changed dataset. 
-```{r}
-ggplot(data_under, aes(x = Status, fill = Status)) +
-  geom_bar() +
-  ylab("Count") +
-  xlab("Status of the loan")
-```
 
 
 
+
+
+
+
+## alter Code ABI / Vla
 ```{r}
 
 # Split the data into training(70%) and testing(30%) data sets.
