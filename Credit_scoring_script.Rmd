@@ -286,6 +286,48 @@ training_set <- loan_sample_under[splitIndex,]
 testing_set <- loan_sample_under[-splitIndex,]
 ```
 
+### Brotuto algo
+In the next step, we run the Boruta algo.
+```{r, echo=FALSE}
+loan_sample_under$Status <- as.factor(loan_sample_under$Status)
+boruta_output <- Boruta(Status~., data = loan_sample_under, doTrace=2)
+```
+
+
+Next, we extract and print the significant attributes. 
+```{r}
+boruta_signif <- getSelectedAttributes(boruta_output, withTentative = TRUE)
+print(boruta_signif)
+```
+
+
+Next, we visualize the results. 
+```{r}
+plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
+```
+
+Finally, we can check for multicollinearity which can also be part of the feature selection process. Remember - multicollinearity - one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This can lead to skewed or misleading estimates and conclusions
+
+In the next step, we look at the correlations that emerge between the variables. Which correlation are you worried about? 
+```{r}
+data_new_under <- loan_sample_under
+correlations = cor(data_new_under[-c(20:24)])
+corrplot(correlations) 
+```
+
+We can also test for the significance of the correlation. The cor_pmat function allow us to visualize the correlations explicitly marking the insignificant correlations. 
+
+```{r}
+p_value_mat <- cor_pmat(data_new_under[,-c(20:24)])
+ggcorrplot(correlations, type = "lower", p.mat = p_value_mat) 
+```
+
+Looking at the correlation plots and the output from the Boruta algo, we would keep all variables apart from ratio17. 
+
+```{r}
+data_new_under <- data_new_under[-10]
+```
+
 
 
 
