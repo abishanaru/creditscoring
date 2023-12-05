@@ -1,0 +1,375 @@
+---
+  title: "SBD2_Credit_Risk_Practical"
+author: "Branka_Hadji_Misheva"
+date: '2023'
+output:
+  html_document:
+  df_print: paged
+HTML: default
+word_document: default
+pdf_document: default
+---
+  
+  # Credit Risk Management: Introduction 
+  
+  The primary objective of this work is to develop a predictive model aimed at estimating the likelihood of a company defaulting on a loan. Leveraging a real-world dataset comprising 15,045 observations across 24 different variables, this endeavor seeks to provide valuable insights and a robust tool for financial institutions and lenders. By harnessing the power of machine learning and statistical analysis, this model aims to enhance risk assessment processes, enabling more accurate and informed decisions when evaluating loan applications. Ultimately, the goal is to mitigate financial risks associated with lending, thereby contributing to more prudent and responsible lending practices within the financial industry.
+
+Cheat sheet: https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf 
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+libraries = c("readr", "ggplot2","Boruta", "ROCR", "caret", "pROC", "dplyr", "ROSE", "corrplot", "DescTools", "ggpubr", "tidyverse", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr")
+
+lapply(libraries, function(x) if (!(x %in% installed.packages())) {
+  install.packages(x)
+})
+
+lapply(libraries, library, quietly = TRUE, character.only = TRUE)
+
+rm(list=ls())
+
+set.seed(7)
+
+#setwd("/Users/heb1/Library/CloudStorage/OneDrive-SharedLibraries-BernerFachhochschule/bfh-bfhinternal - General/SBD2/Moodle/Week 8 - Use Case/2023")
+
+data <- read_csv("data_final_stand.csv")
+data <- data.frame(data)
+```
+
+
+# Descriptive analysis 
+## Structure and dimensions of the data set
+
+The first step in any machine learning task is to explore the data and run some preliminary descriptive analytics.
+
+We start by investigating the structure of the data set. Namely, we are working with a data containing 24 financial indicators of 15,045 companies which have asked for a loan. The objective of the work is to train and test a logistic classifier that will be able to predict whether the company will default on its loan or not. In other words, the target feature is the "Status" variable. 
+
+```{r}
+head(data)
+tail(data)
+```
+In the next step, we check the structure of the data.
+```{r, echo=FALSE}
+str(data)
+```
+
+Next, we check the summary statistics for each variable included in the dataset.
+```{r}
+summary(data)
+```
+
+# Data quality issues 
+## Checking for NAs
+
+One of the key data quality issues is missing data. In the next step, we using the apply() function to check the presence of NAs in each of the variables included in the dataset. 
+```{r}
+apply(data, 2, function(x) any(is.na(x)))
+```
+Similarly, we can also use functions from the dlookr package to explore the data quality.
+```{r}
+overview(data)
+```
+```{r}
+overview <- overview(data)
+plot(overview)
+```
+
+In the next step, we set binary variables as factor.
+```{r pressure, echo=FALSE}
+data[,c(20:24)] <- apply(data[,c(20:24)], 2, function(x) as.factor(as.character(x)))
+```
+
+
+## Balance of the target variable  
+
+In the next step, we investigate our target variable. We notice that in our sample, we have 13,413 companies which did not default on their loan and we have 1,632 which did default. 
+
+```{r}
+table(data$status)
+```
+
+Using the PercTable function, we can also obtain both the count and the percentage. What would you say? Is this a well-balanced data set? 
+  
+  ```{r, echo=FALSE}
+PercTable(data$status)
+```
+
+We can also visualize the count by plotting a bar plot.
+```{r}
+ggplot(data, aes(x = status, fill = status)) +
+  geom_bar() +
+  ylab("Count") +
+  xlab("Status of the loan")
+```
+The data set is highly imbalanced. What is a good way to deal with this issue? 
+  
+  One solution is to perform under- or over- sampling.
+
+In the next step, we carry-out undersampling using the ROSE package.
+
+ROSE -- Functions to deal with binary classification problems in the presence of imbalanced classes. Synthetic balanced samples are generated according to ROSE (Menardi and Torelli, 2013). Functions that implement more traditional remedies to the class imbalance are also provided, as well as different metrics to evaluate a learner accuracy. These are estimated by holdout, bootstrap or cross-validation methods.
+
+The function that we will use is the ovun.sample().
+```{r}
+set.seed(7)
+data_original <- data
+data_balanced <- ovun.sample(status ~ ., data=data, method = "under")
+data_under <- data.frame(data_balanced[["data"]])
+```
+
+Let's visualize our changed dataset. 
+```{r}
+ggplot(data_under, aes(x = status, fill = status)) +
+  geom_bar() +
+  ylab("Count") +
+  xlab("Status of the loan")
+```
+
+## Cheking for outliers 
+
+We proceed with investigating the data sets further. We provide a boxplot of the numeric variables in both the original and under-sampled dataset. How would you interpret the below plots? 
+
+```{r, fig.width=20, fig.height=20}
+# Simple visualization of the full data 
+boxplot(scale(data[,1:19]), use.cols = TRUE)
+boxplot(scale(data_under[,1:19]), use.cols = TRUE)
+```
+
+Another method that we can use to investigate outliers is through the dlookr package. Specifically, we use the diagnose_outlier function. The outputs that we receive are summarized below: 
+- outliers_cnt : number of outliers
+- outliers_ratio : percent of outliers
+- outliers_mean : arithmetic average of outliers
+- with_mean : arithmetic average of with outliers
+- without_mean : arithmetic average of without outliers
+
+```{r}
+diagnose_outlier(data_under) 
+```
+
+The same package also allows us to visualize all variables with and without the outliers. 
+```{r}
+data_under %>%
+  plot_outlier(diagnose_outlier(data_under) %>%
+                 filter(outliers_ratio >= 0.5) %>%          # dplyr
+                 select(variables) %>%
+                 unlist())
+```
+
+### Dealing with outliers 
+
+Remember, one way to deal with ourliers is to replace them with the 5th and 95th percentile values for the variables. For this purpose, we use the function specified below. Can you think of any other approach for dealing with outliers?
+
+```{r}
+outlier <- function(x){
+    quantiles <- quantile(x, c(.05, .95))
+    x[x < quantiles[1]] <- quantiles[1]
+    x[x > quantiles[2]] <- quantiles[2]
+    x
+}
+```
+
+In the next step, we apply the outlier function to our numeric variables in the under-sampled dataset. For this, we use the map_df function. This allows us to apply a function to each element of a list or atomic vector.
+
+```{r}
+data_new_under <- map_df(data_under[,-c(20:24)], outlier)
+cols <- data_under[,c(20:24)]
+data_new_under <- cbind(data_new_under, cols)
+```
+
+Let's check how the boxplot looks like. Would you make further adjustments?
+  ```{r, fig.width=20, fig.height=20}
+boxplot(scale(data_new_under[,c(1:19)]), use.cols = TRUE)
+```
+
+# Feature selection 
+
+We can also observe the distribution of the features separate for the two levels in the loan status feature (not-defaulted and defaulted i.e. Status = 0 and Status = 1)
+
+```{r}
+data_key <- data_new_under %>%
+  as_data_frame() %>%
+  select_if(is.numeric) %>%
+  gather(key = "variable", value = "value")
+
+```
+
+Looking at the box plots below, can you identify some features that can be used for discriminating between the defaulted and not defaulted loans? 
+  
+  ```{r}
+for (i in 1:length(data_new_under[,-c(20:24)])) {
+  print(ggplot(data_new_under, aes(y = data_new_under[,i], color = status)) + 
+          geom_boxplot() + 
+          ylab(names(data_new_under[i])) + 
+          theme(axis.title.x=element_blank(),
+                axis.text.x=element_blank(),
+                axis.ticks.x=element_blank()))
+}
+```
+
+For the similar purpose, we can also look at density plots per the two levels. 
+```{r}
+for (i in 1:length(data_new_under[,-c(20:24)])) {
+  print(ggplot(data_new_under, 
+               aes(x = data_new_under[,i],
+                   fill = status)) +
+          geom_density(alpha = 0.2) +
+          xlab(names(data_new_under[i])) +
+          ylab("Density"))
+}
+
+```
+
+At this stage, we can run further checks to decide which features to select. One option is the Boruta algorithm. The main idea behind the Boruta algorithm is quite straightforward. We make a randomised copy of the system, merge the copy with the original input features and build a random forest classifer for this extended system. To asses importance of the variable in the original system, we compare it with that of the randomised variables. Only variables for which importance is higher than that of the randomised variables are classified as important
+
+In the next step, we run the Boruta algo.
+```{r, echo=FALSE}
+data_new_under$status <- as.factor(data_new_under$status)
+boruta_output <- Boruta(status~., data = data_new_under, doTrace=2)
+```
+
+
+Next, we extract and print the significant attributes. 
+```{r}
+boruta_signif <- getSelectedAttributes(boruta_output, withTentative = TRUE)
+print(boruta_signif)
+```
+
+
+Next, we visualize the results. 
+```{r}
+plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
+```
+
+Finally, we can check for multicollinearity which can also be part of the feature selection process. Remember - multicollinearity - one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This can lead to skewed or misleading estimates and conclusions
+
+In the next step, we look at the correlations that emerge between the variables. Which correlation are you worried about? 
+  ```{r}
+correlations = cor(data_new_under[-c(20:24)])
+corrplot(correlations) 
+```
+
+We can also test for the significance of the correlation. The cor_pmat function allow us to visualize the correlations explicitly marking the insignificant correlations. 
+
+```{r}
+p_value_mat <- cor_pmat(data_new_under[,-c(20:24)])
+ggcorrplot(correlations, type = "lower", p.mat = p_value_mat) 
+```
+
+Looking at the correlation plots and the output from the Boruta algo, we would keep all variables apart from ratio17. 
+
+```{r}
+data_new_under <- data_new_under[-10]
+```
+
+
+# Training and Testing a Logistic Classifer
+
+In the first instance, we need to define the training and the testing data sets. Specifically, we keep 70 percentage of the observations for the training and we leave 30 percentage of the observations for the testing of our classifier.
+```{r}
+# In terms of the division, we can take a random or stratified approach. With a simple random sampling technique, we are not sure whether the subgroups of the target variable is represented equally or proportionately within the two sub-samples. Stratified sampling allows us to keep the same distribution of the target in both the training and the testing sets. 
+set.seed(7)
+div <- createDataPartition(y = data_new_under$status, p = 0.7, list = F)
+
+# Training Sample
+data.train <- data_new_under[div,] # 70% here
+
+# Test Sample
+data.test <- data_new_under[-div,] # rest of the 30% data goes here
+```
+
+We can check the frequency of the levels in the original, the training and the testing data. 
+```{r}
+PercTable(data_new_under$status)
+PercTable(data.train$status)
+PercTable(data.test$status)
+```
+
+In the next step, we train the logit model. In terms of our inputs i.e. our Xs, we use all variables included in the data_new_under apart from the status, which is our Y. How would you interpret the results printed from the summary fit1? 
+  ```{r, echo=FALSE}
+fit1 <- glm(status ~ ., data=data.train,family=binomial())
+summary(fit1)
+```
+
+We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
+```{r, echo=FALSE}
+significant.variables <- summary(fit1)$coeff[-1,4] < 0.05
+names(significant.variables)[significant.variables == TRUE]
+```
+
+Next, we want to test the predictive performance of our model. For this purpose, we plot the ROC curve. 
+```{r, echo=FALSE}
+data.test$fit1_score <- predict(fit1,type='response',data.test)
+fit1_pred <- prediction(data.test$fit1_score, data.test$status)
+fit1_roc <- performance(fit1_pred, "tpr", "fpr")
+plot(fit1_roc, lwd=1, colorize = TRUE, main = "Fit1: Logit - ROC Curve")
+lines(x=c(0, 1), y=c(0, 1), col="black", lwd=1, lty=3)
+```
+
+
+In the next step, we visualize the Precision/Recall Curve. This curve summarizes the trade-off between the true positive rate and the positive predictive value for a predictive model using different probability thresholds.
+```{r}
+fit1_precision <- performance(fit1_pred, measure = "prec", x.measure = "rec")
+plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
+```
+
+In the next step, we compute the confusion matrix.  
+```{r, echo=FALSE}
+confusionMatrix(as.factor(round(data.test$fit1_score)), data.test$status)
+
+```
+
+In the next step, we compute the predictive utility of the model across all possible thresholds. We do this though the area under the curve AUC value.
+```{r, echo=FALSE}
+fit1_auc <- performance(fit1_pred, measure = "auc")
+cat("AUC: ",fit1_auc@y.values[[1]]*100)
+```
+
+## Training and testing without any data quality checks and feature selection
+```{r}
+# Split the data 
+set.seed(7)
+data$status <- as.factor(data$status)
+div_2 <- createDataPartition(y = data$status, p = 0.7, list = F)
+
+# Training Sample
+data.train_2 <- data[div,] # 70% here
+
+# Test Sample
+data.test_2 <- data[-div,] # rest of the 30% data goes here
+```
+
+```{r}
+# Fit the model
+fit2 <- glm(status ~ ., data=data.train_2,family=binomial())
+summary(fit2)
+```
+
+
+```{r, echo=FALSE}
+# Extract and compare the significant variables 
+significant.variables_2 <- summary(fit2)$coeff[-1,4] < 0.05
+names(significant.variables)[significant.variables == TRUE]
+names(significant.variables_2)[significant.variables == TRUE]
+```
+
+```{r}
+# Test the perfromance 
+data.test_2$fit2_score <- predict(fit2,type='response',data.test_2)
+fit2_pred <- prediction(data.test_2$fit2_score, data.test_2$status)
+fit2_roc <- performance(fit2_pred, "tpr", "fpr")
+plot(fit2_roc, lwd=1, colorize = TRUE, main = "Fit2: Logit - ROC Curve")
+lines(x=c(0, 1), y=c(0, 1), col="black", lwd=1, lty=3)
+```
+
+
+```{r, echo=FALSE}
+# Extract the confusion matrix 
+confusionMatrix(as.factor(round(data.test_2$fit2_score)), data.test_2$status)
+```
+
+```{r, echo=FALSE}
+# Extract the AUC value 
+fit2_auc <- performance(fit2_pred, measure = "auc")
+cat("AUC: ",fit2_auc@y.values[[1]]*100)
+```
