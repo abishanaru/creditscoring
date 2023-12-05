@@ -102,8 +102,6 @@ levels_count <- max(categorical_levels, na.rm = TRUE)
 cat("The categorical variable with the most levels in the dataset is:", cat_var_most_levels, "with", levels_count, "levels.")
 ```
 
-
-
 #### 1.1.3: Summarize the variables. Discuss the summary statistics obtained.
 ```{r show_col_types = False}
 # Categorial Label with the most Levels
@@ -113,14 +111,17 @@ Our loan data includes information on 40,000 loans. The average loan size is abo
 
 #### 1.1.4: Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
 ```{r show_col_types = False}
-ggplot(loan_sample, aes(x = Status, fill = factor(Status))) + 
+# Plot the distribution of the target variable
+ggplot(loan_sample, aes(x = Status, fill = Status)) + 
   geom_bar() +
   scale_fill_brewer(palette = "Set1") + 
-  labs(title = 'Distribution of Target Variable (Status)', x = 'Status', y = 'Count') +
+  labs(title = 'Distribution of target variable (Status)', x = 'Status', y = 'Count') +
   theme_minimal()
 
 ```
+The target variable 'Status' in our dataset distinctly categorizes credit approval outcomes into two levels: '0' represents a 'No', indicating that the credit has not been approved, whereas '1' signifies a 'Yes', confirming the approval of the credit.
 
+The target variable in our dataset shows a significant imbalance, with a substantially higher number of credits not being approved. This imbalance is important to address because, in machine learning, an unbalanced dataset can lead to biased models that over-predict the majority class, in this case, the non-approved credits. Consequently, balancing the dataset is crucial for training an accurate and reliable logistic classifier that fairly represents both outcomes. However, for the immediate analytical steps, we will retain the dataset in its unbalanced form to understand its inherent characteristics.
 
 1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
 ```{r show_col_types = False}
@@ -148,9 +149,28 @@ loan_sample %>%
 ### 1.2: Investigating outliers with a box plot
 Elaborate your view on how to proceed in dealing with the outliers and – if necessary – take appropriate action.
 ```{r}
-# Create a boxplot for all numeric variables
-boxplot(scale(loan_sample))
+# Reshape the data to long format and scale the numeric values
+loan_sample_long_scaled <- loan_sample %>%
+  select(where(is.numeric)) %>%
+  mutate(across(everything(), scale)) %>%
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "value")
+
+# Create a boxplot with the scaled values
+ggplot(loan_sample_long_scaled, aes(x = variable, y = value)) +
+  geom_boxplot() +
+  labs(x = "", y = "Scaled Value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
+
+The box plot illustrated the the distribution of scaled numeric variables. Outliers are visible as individual points outside the box plot. It is visible that variables such as annual_inc, int_rate, revol_bal and total_rev_hi_lim have a considerable number of outliers.
+
+When considering how to deal with outliers, it is important to understand their nature and the potential impact on the analysis. If outliers represent errors or anomalies that are not characteristic of the population, they can be removed or corrected. However, if they are true values, they can provide meaningful insights and by deleting them we would degrade the accuracy of the model.
+
+In our context of credit scores, outliers can indicate unusual but legitimate cases, such as a person with a high income or with exceptionally high balances. Before we take action, we should therefore make sure if these high values are valid.
+
+
+# Hier weiter machen!!! /abi
 
 ### 1.3: Investigating the distribution of the numeric features per the two levels of our target feature
 (i.e. default vs non-default). Discuss the visualizations. Which variables seem to be relevant in predicting the target feature?
