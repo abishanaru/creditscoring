@@ -9,26 +9,36 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Used librarys
+
+In the rapidly evolving landscape of financial technology, credit scoring remains a cornerstone in determining the creditworthiness of applicants. This paper delves into the realm of predictive modeling, using a dataset provided by our professors, enriched with comprehensive credit scoring information. The overarching objective of our study is to train a model that efficiently and accurately determines the eligibility of individuals for credit approval.
+
+The task set forth by our professors involves a comprehensive journey through four key exercises. The first exercise is centered around a thorough analysis of the dataset. Here, we delve into understanding the underlying structures, identifying critical variables, and most importantly, balancing the dataset to ensure a fair representation of diverse credit scenarios.
+
+Subsequently, in the second exercise, we focus on training and testing a logistic classifier. This step is crucial in establishing a baseline model from which further improvements can be measured.
+
+The third exercise involves enhancing the predictive performance of the model. This stage is particularly challenging and significant, as it entails fine-tuning the model to ensure it captures the nuances of credit scoring with greater accuracy and efficiency.
+
+Finally, the fourth exercise invites us to step into the practical world. Here, we explore the various challenges a company may face if they were to implement our model in a real-world scenario. This exercise not only grounds our theoretical work in reality but also provides valuable insights into the practical implications and considerations in deploying machine learning models in the credit industry.
+
+This paper aims to not only present a robust model for credit scoring but also to contribute to the broader understanding of how machine learning can be effectively utilized in financial decision-making processes.
+
+
+## Load packages and data
 ```{r}
-library(readr)
-library(tidyverse)
-library(ggplot2)
-library(dplyr)
-library(reshape2)
-library(plotly)
-library(caret)
-library(DescTools)
-library(pROC)
-library(ROCR)
-library(ROSE)
+libraries = c("readr", "tidyverse", "ggplot2", "dplyr", "reshape2", "plotly", "caret", "DescTools", "pROC", "ROCR", "ROSE")
 
-```
+lapply(libraries, function(x) if (!(x %in% installed.packages())) {
+  install.packages(x)
+})
 
+lapply(libraries, library, quietly = TRUE, character.only = TRUE)
 
-## Import dataset
-```{r}
+rm(list=ls())
+
 loan_sample <- read_csv("loan_sample_8.csv")
+
+# Create a copy of the original dataset
+loan_sample_original <- loan_sample
 ```
 
 
@@ -40,6 +50,13 @@ loan_sample <- read_csv("loan_sample_8.csv")
 ```{r show_col_types = False}
 str(loan_sample)
 ```
+
+```{r}
+loan_sample$Status <- as.factor(loan_sample$Status)
+```
+In the code the "Status" variable is converted to a factor to properly represent the binary outcome of credit approval (1 for 'Yes', 0 for 'No') in the upcoming predictive model. This ensures the model treats "Status" as a categorical, not numerical, variable.
+
+
 #### 1.1.2: How many numeric and how many categorical variables are included in the data? What categorical variable has the most levels in it?
 ```{r show_col_types = False}
 numeric_vars_count <- sum(sapply(loan_sample, is.numeric))
@@ -62,9 +79,12 @@ Our loan data includes information on 40,000 loans. The average loan size is abo
 
 #### 1.1.4: Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
 ```{r show_col_types = False}
-ggplot(loan_sample, aes(x = Status)) + 
+ggplot(loan_sample, aes(x = Status, fill = factor(Status))) + 
   geom_bar() +
-  labs(title = 'Distribution of Target Variable (Status)', x = 'Status', y = 'Count')
+  scale_fill_brewer(palette = "Set1") + 
+  labs(title = 'Distribution of Target Variable (Status)', x = 'Status', y = 'Count') +
+  theme_minimal()
+
 ```
 
 
@@ -80,7 +100,7 @@ loan_sample %>%
   theme_minimal()
 ```
 ```{r show_col_types = False}
-#Boxplots
+# Boxplots
 loan_sample %>% 
   select_if(is.numeric) %>% 
   gather(key = "variable", value = "value") %>%
@@ -196,22 +216,22 @@ for (cat_var in categorical_vars) {
 ### 1.5: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
 ```{r}
 # Calculate the correlation matrix of numeric features
-#numeric_vars <- loan_sample %>% select_if(is.numeric)
-#cor_matrix <- cor(numeric_vars, use = "complete.obs")  # use="complete.obs" handles missing values by case-wise deletion
+numeric_vars <- loan_sample %>% select_if(is.numeric)
+cor_matrix <- cor(numeric_vars, use = "complete.obs")  # use="complete.obs" handles missing values by case-wise deletion
 
 # Melt the correlation matrix into long format
 
-#melted_cor_matrix <- melt(cor_matrix)
+melted_cor_matrix <- melt(cor_matrix)
 # Create a heatmap of the correlation matrix
-#ggplot(data = melted_cor_matrix, aes(Var1, Var2, fill = value)) +
-#  geom_tile(color = "white") +
-#  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-#                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-#                       name="Pearson\nCorrelation") +
-#  theme_minimal() +
-#  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1),
-#        axis.text.y = element_text(size = 12)) +
-#  coord_fixed()
+ggplot(data = melted_cor_matrix, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1),
+        axis.text.y = element_text(size = 12)) +
+  coord_fixed()
 
 ```
 
@@ -222,16 +242,16 @@ Moderate to Weak Correlations: Values that are closer to 0 indicate a weaker rel
 ### 1.6: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
 ```{r}
 # Create a ggplot object with loan amount and annual income
-#p <- ggplot(loan_sample, aes(x = annual_inc, y = loan_amnt)) +
-#  geom_point(alpha = 0.5) + 
-#  labs(title = "Scatter plot of Loan Amount vs Annual Income",
-#       x = "Annual Income",
-#       y = "Loan Amount") +
-#  theme_minimal()
+p <- ggplot(loan_sample, aes(x = annual_inc, y = loan_amnt)) +
+  geom_point(alpha = 0.5) + 
+  labs(title = "Scatter plot of Loan Amount vs Annual Income",
+       x = "Annual Income",
+       y = "Loan Amount") +
+  theme_minimal()
 
 # Convert ggplot object to a plotly object
-#p_interactive <- ggplotly(p)
-#p_interactive
+p_interactive <- ggplotly(p)
+# p_interactive
 
 ```
 
@@ -239,18 +259,17 @@ The areas of high density indicate common combinations of income and loan amount
 
 ### 1.7: Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
 ```{r}
-# Create a copy of the original dataset
-loan_sample_original <- loan_sample
-
 loan_sample_balanced <- ovun.sample(Status ~ ., data=loan_sample, method = "under")
 loan_sample_under <- data.frame(loan_sample_balanced[["data"]])
 
 # Plot the balance
-ggplot(loan_sample_under, aes(x = Status, fill = Status)) +
+ggplot(loan_sample_under, aes(x = Status, fill = Status, group = Status)) +
   geom_bar() +
   ylab("Count") +
   xlab("Status of the loan") +
-  theme_minimal()
+  scale_fill_brewer(palette = "Set1") +
+  theme_minimal() +
+  ggtitle("New balanced dataset")
 ```
 Balancing a dataset is important for training classification models because it prevents the model from being biased towards the majority class and potentially ignoring the minority class. This is particularly true for datasets where the outcome class of interest (e.g., default on a loan) is much less common than the non-interest class (e.g., non-default). Balancing helps to improve the generalization of the model and its performance on unseen data, especially for the minority class.
 
