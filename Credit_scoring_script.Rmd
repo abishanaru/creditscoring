@@ -2,7 +2,10 @@
 title: "Credit Scoring SBD2"
 author: "Abishan Arumugavel, Vladyslav Gorbunov, Gilles Nikles, Josua Reich"
 date: "2023-10-10"
-output: html_document
+output:
+  html_document:
+    toc: yes
+    toc_depth: 3
 ---
 
 In the rapidly evolving landscape of financial technology, credit scoring remains a cornerstone in determining the creditworthiness of applicants. This paper delves into the realm of predictive modeling, using a dataset provided by our professors, enriched with comprehensive credit scoring information. The overarching objective of our study is to train a model that efficiently and accurately determines the eligibility of individuals for credit approval.
@@ -124,7 +127,7 @@ The target variable 'Status' in our dataset distinctly categorizes credit approv
 
 The target variable in our dataset shows a significant imbalance, with a substantially higher number of credits not being approved. This imbalance is important to address because, in machine learning, an unbalanced dataset can lead to biased models that over-predict the majority class, in this case, the non-approved credits. Consequently, balancing the dataset is crucial for training an accurate and reliable logistic classifier that fairly represents both outcomes. 
 
-1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
+#### 1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
 ```{r}
 # Histograms
 loan_sample %>% 
@@ -395,7 +398,7 @@ accuracy <- sum(diag(cm$table)) / sum(cm$table)
 cat("AUC: ", fit1_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy)
 ```
 
-# Excercise 3
+## Excercise 3
 Thinking about the pre-processing steps that you carried out before training the logistic classifier:
 ### 3.1: Can you think of a way to improve the predictive performance of your data?
 
@@ -403,4 +406,8 @@ Thinking about the pre-processing steps that you carried out before training the
 ### 3.2: What can you do differently? (hint: Feel free to be creative and discuss any additional step in data collection and/or data pre-processing that you might try so to improve the results)
 
 
-
+# Excercise 4
+###
+Finally, thinking about putting your model into action and basing credit decisions on the prediction that it generates:
+• What kind of challenges may a company face if it would use your model in their daily business, in particular in regard to ethical challenges and moral obligations companies have? Please refer to the „common ethical issues in the context the creation of value from data” (see slides week 11) in your answer.
+• Can you think of a way how companies can overcome or at least mitigate the issues that you described above?
