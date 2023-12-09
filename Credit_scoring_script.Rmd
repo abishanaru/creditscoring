@@ -186,25 +186,30 @@ When considering how to deal with outliers, it is important to understand their 
 
 
 ```{r}
-# Visualizing all variables with and without the outliers
+# Diagnosing outliers and selecting variables with more than 1% outliers
+variables_with_high_outlier_ratio <- loan_sample %>%
+  diagnose_outlier() %>%
+  filter(outliers_ratio > 1) %>%
+  pull(variables)
+
+# Plotting the outliers for these variables
 loan_sample %>%
-  plot_outlier(diagnose_outlier(loan_sample) %>%
-                 filter(outliers_ratio >= 1.5) %>%
-                 select(variables) %>%
-                 unlist())
+  plot_outlier(one_of(variables_with_high_outlier_ratio))
 
 ```
 
 ```{r}
-# Function to check if a variable should be truncated
-should_keep <- function(x, lower_perc, upper_perc) {
-  lower_bound <- quantile(x, lower_perc, na.rm = TRUE)
-  upper_bound <- quantile(x, upper_perc, na.rm = TRUE)
-  x >= lower_bound & x <= upper_bound
+# Function for adjusting the values to the quantile limits
+cap_values_at_quantiles <- function(x) {
+    quantiles <- quantile(x, c(0.01, 0.99), na.rm = TRUE)
+    x <- ifelse(x < quantiles[1], quantiles[1], x)
+    x <- ifelse(x > quantiles[2], quantiles[2], x)
+    x
 }
-# Apply truncation and keep rows where all numeric variables are within the specified range
+
 loan_sample_truncated <- loan_sample %>%
-  filter(if_all(where(is.numeric), ~ should_keep(., 0.01, 0.99)))
+  mutate(across(where(is.numeric), cap_values_at_quantiles))
+
 
 ```
 
@@ -248,7 +253,7 @@ for (i in setdiff(1:ncol(loan_sample_under), exclude_columns)) {
 Hier noch text schreiben!
 
 
-### 1.5: Brotuto algorithm
+### 1.5: Brotuta algorithm
 In the next step, we run the Boruta algorithm.The Boruta algorithm provides a more objective method for determining the importance of features as it is based on repeated, random comparisons rather than human judgment.
 ```{r, echo=FALSE}
 loan_sample_under$Status <- as.factor(loan_sample_under$Status)
@@ -261,8 +266,7 @@ print(boruta_signif)
 # Visualisation of the result
 plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
 ```
-Hier weiter machen Abishan!!!
-
+ Hier noch genauer erklären!
 Now, we can examine multicollinearity, which occurs when one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This situation can result in skewed or misleading coefficient estimates and conclusions.
 
 ### 1.6: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
@@ -362,11 +366,12 @@ We can print out only the significant variables with p-value lower than 0.05. We
 ```{r, echo=FALSE}
 significant.variables <- summary(fit1)$coeff[-1,4] < 0.05
 names(significant.variables)[significant.variables == TRUE]
+
 ```
 
 ### 2.3: Plot the ROC and the Precision/Recall Curve and interpret the results.
 Next, we aim to evaluate the predictive performance of our model. To do so, we will plot the ROC curve. 
-```{r, echo=FALSE}
+```{r}
 testing_set$fit1_score <- predict(fit1,type='response',testing_set)
 fit1_pred <- prediction(testing_set$fit1_score, testing_set$Status)
 fit1_roc <- performance(fit1_pred, "tpr", "fpr")
@@ -378,7 +383,7 @@ In the next step, we visualize the Precision/Recall Curve. This curve summarizes
 fit1_precision <- performance(fit1_pred, measure = "prec", x.measure = "rec")
 plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
 ```
-
+Hier noch genau erklären und herausfinden warum es ein Sprung macht.
 ### 2.4: Produce the confusion matrix and interpret the results.
 ```{r}
 # Extract the confusion matrix 
@@ -407,7 +412,6 @@ Thinking about the pre-processing steps that you carried out before training the
 
 
 # Excercise 4
-###
 Finally, thinking about putting your model into action and basing credit decisions on the prediction that it generates:
 • What kind of challenges may a company face if it would use your model in their daily business, in particular in regard to ethical challenges and moral obligations companies have? Please refer to the „common ethical issues in the context the creation of value from data” (see slides week 11) in your answer.
 • Can you think of a way how companies can overcome or at least mitigate the issues that you described above?
