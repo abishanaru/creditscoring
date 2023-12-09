@@ -25,6 +25,9 @@ This paper aims to not only present a robust model for credit scoring but also t
 
 ## Load packages and data
 ```{r}
+# Set seed for reproducibility
+set.seed(7)
+
 libraries = c("readr", "tidyverse", "ggplot2", "dplyr", "reshape2", "plotly", "caret", "DescTools", "pROC", "ROCR", "ROSE", "Boruta", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr")
 
 lapply(libraries, function(x) if (!(x %in% installed.packages())) {
@@ -35,6 +38,7 @@ lapply(libraries, library, quietly = TRUE, character.only = TRUE)
 
 rm(list=ls())
 
+# Import of dataset
 loan_sample <- read_csv("loan_sample_8.csv")
 
 # Create a copy of the original dataset
@@ -121,7 +125,7 @@ ggplot(loan_sample, aes(x = Status, fill = Status)) +
 ```
 The target variable 'Status' in our dataset distinctly categorizes credit approval outcomes into two levels: '0' represents a 'No', indicating that the credit has not been approved, whereas '1' signifies a 'Yes', confirming the approval of the credit.
 
-The target variable in our dataset shows a significant imbalance, with a substantially higher number of credits not being approved. This imbalance is important to address because, in machine learning, an unbalanced dataset can lead to biased models that over-predict the majority class, in this case, the non-approved credits. Consequently, balancing the dataset is crucial for training an accurate and reliable logistic classifier that fairly represents both outcomes. However, for the immediate analytical steps, we will retain the dataset in its unbalanced form to understand its inherent characteristics.
+The target variable in our dataset shows a significant imbalance, with a substantially higher number of credits not being approved. This imbalance is important to address because, in machine learning, an unbalanced dataset can lead to biased models that over-predict the majority class, in this case, the non-approved credits. Consequently, balancing the dataset is crucial for training an accurate and reliable logistic classifier that fairly represents both outcomes. 
 
 1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
 ```{r show_col_types = False}
@@ -134,6 +138,19 @@ loan_sample %>%
   facet_wrap(~variable, scales = 'free_x') +
   theme_minimal()
 ```
+
+The histogram we created for the variable open_acc has gaps. We should examine this more closely.
+```{r}
+# Create boxplot of the variable total_acc
+ggplot(loan_sample, aes(x = open_acc)) +
+  geom_histogram(bins = 22) + # Adjust the number of bins as necessary
+  labs(x = "Open Accounts", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+Since the variable ranges from 1 to 22, using 30 bins leads to empty spaces. Adjusting the bins to match the actual value range has provided a clearer, gap-free histogram.
+
 ```{r show_col_types = False}
 # Boxplots
 loan_sample %>% 
@@ -163,131 +180,38 @@ ggplot(loan_sample_long_scaled, aes(x = variable, y = value)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
 
-The box plot illustrated the the distribution of scaled numeric variables. Outliers are visible as individual points outside the box plot. It is visible that variables such as annual_inc, int_rate, revol_bal and total_rev_hi_lim have a considerable number of outliers.
+The box plot illustrated the the distribution of scaled numeric variables. Outliers are visible as individual points outside the box plot. It is visible that most of the variables have some outliers.
 
-When considering how to deal with outliers, it is important to understand their nature and the potential impact on the analysis. If outliers represent errors or anomalies that are not characteristic of the population, they can be removed or corrected. However, if they are true values, they can provide meaningful insights and by deleting them we would degrade the accuracy of the model.
-
-In our context of credit scores, outliers can indicate unusual but legitimate cases, such as a person with a high income or with exceptionally high balances. Before we take action, we should therefore make sure if these high values are valid.
+When considering how to deal with outliers, it is important to understand their nature and the potential impact on the analysis. If outliers represent errors or anomalies that are not characteristic of the population, they can be removed or corrected. 
 
 
-# Hier weiter machen!!! /abi
-
-### 1.3: Investigating the distribution of the numeric features per the two levels of our target feature
-(i.e. default vs non-default). Discuss the visualizations. Which variables seem to be relevant in predicting the target feature?
 ```{r}
-# Plotting the density of numeric features by the levels of the target feature
+# Visualizing all variables with and without the outliers
 loan_sample %>%
-  select(where(is.numeric)) %>%  # Select only numeric columns
-  pivot_longer(cols = !c(Status), names_to = "variable", values_to = "value") %>%  # Reshape the data
-  ggplot(aes(x = value, fill = Status)) +  # Map 'Status' to 'fill' aesthetic
-  geom_density(alpha = 0.5) +  # Use density plot
-  facet_wrap(~variable, scales = 'free_x') +  # Facet by variable
-  theme_minimal() +
-  labs(title = "Density Plots of Numeric Variables by Status", x = "Value", y = "Density") +
-  scale_fill_brewer(palette = "Set1")  # Use a color palette for better distinction
+  plot_outlier(diagnose_outlier(loan_sample) %>%
+                 filter(outliers_ratio >= 1.5) %>%
+                 select(variables) %>%
+                 unlist())
 
 ```
-Variables to pay attention to would be those with:
 
-- Distinct peaks at different values for each group.
-- Varying spreads (some might be more tightly clustered for one group and more spread out for the other).
-- Different skewness (one group could be skewed left or right compared to the other).
-
-Loan Amount (loan_amnt): If defaults show consistently higher or lower loan amounts than non-defaults, this variable might be predictive. The relevance would be stronger if there is a noticeable difference in the interquartile range between the two statuses.
-
-Interest Rate (int_rate): Higher interest rates may be associated with higher default risk, so if defaults have higher median interest rates than non-defaults, this variable could be important.
-
-Annual Income (annual_inc): While high-income individuals can also default, a general pattern where lower-income applicants have a higher proportion of defaults could signal relevance.
-
-Debt-to-Income Ratio (dti): A higher DTI often indicates financial strain, which could increase default risk. If the DTI is higher for defaults, it would be a significant predictor.
-
-Open Credit Lines (open_acc): This variable, by itself, may not be as predictive unless it shows a consistent pattern with default status. However, it could become relevant when combined with other variables like DTI.
-
-Revolving Balance (revol_bal): High revolving balances could indicate potential financial stress or aggressive credit use, which might correlate with default risk.
-
-Revolving Utilization Rate (revol_util): Higher utilization rates are often seen as a red flag for credit risk, making this variable potentially predictive.
-
-Total Number of Credit Lines (total_acc): Like open credit lines, the total number of credit lines might provide insight when analyzed in conjunction with other variables.
-
-Total Received Interest (total_rec_int): If defaults tend to accumulate more interest, this suggests they may have longer-standing debts or higher rates, which could be predictive.
-
-Total Current Balance (tot_cur_bal) and Total Revolving High Credit/Credit Limit (total_rev_hi_lim): These variables might indicate the overall credit engagement and financial leverage of a borrower. Large balances and high credit limits, if associated with defaults, could suggest that borrowers with higher credit engagements are at a higher risk of default.
-
-### 1.4: Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
 ```{r}
-# Generate a bar plot for each categorical variable
-categorical_vars <- c("home_ownership", "verification_status", "purpose", "addr_state")
-# Loop over categorical variables and plot using aes() and without aes_string()
-for (cat_var in categorical_vars) {
-  # Check if the column exists to avoid errors
-  if (!cat_var %in% names(loan_sample)) {
-    message(paste("Skipping", cat_var, "as it is not found in the dataset."))
-    next
-  }
-  
-  # Create the plot
-  plot <- loan_sample %>%
-    group_by(.data[[cat_var]], Status) %>%
-    summarise(Count = n(), .groups = 'drop') %>%
-    ggplot(aes(x = .data[[cat_var]], y = Count, fill = as.factor(Status))) +
-    geom_bar(stat = "identity", position = position_dodge()) +
-    labs(title = paste("Bar plot of", cat_var, "by Status"), x = cat_var, y = "Count") +
-    scale_fill_discrete(name = "Status") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) # Rotate x labels for readability
-  
-  print(plot) # Print the plot
+# Function to check if a variable should be truncated
+should_keep <- function(x, lower_perc, upper_perc) {
+  lower_bound <- quantile(x, lower_perc, na.rm = TRUE)
+  upper_bound <- quantile(x, upper_perc, na.rm = TRUE)
+  x >= lower_bound & x <= upper_bound
 }
+# Apply truncation and keep rows where all numeric variables are within the specified range
+loan_sample_truncated <- loan_sample %>%
+  filter(if_all(where(is.numeric), ~ should_keep(., 0.01, 0.99)))
 
 ```
 
-### 1.5: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
+
+### 1.3: Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
 ```{r}
-# Calculate the correlation matrix of numeric features
-numeric_vars <- loan_sample %>% select_if(is.numeric)
-cor_matrix <- cor(numeric_vars, use = "complete.obs")  # use="complete.obs" handles missing values by case-wise deletion
-
-# Melt the correlation matrix into long format
-
-melted_cor_matrix <- melt(cor_matrix)
-# Create a heatmap of the correlation matrix
-ggplot(data = melted_cor_matrix, aes(Var1, Var2, fill = value)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1,1), space = "Lab", 
-                       name="Pearson\nCorrelation") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1),
-        axis.text.y = element_text(size = 12)) +
-  coord_fixed()
-
-```
-
-Strong Correlations: Variables with high absolute values of correlation (close to 1 or -1) are considered strongly correlated. These could indicate a redundant or derived relationship where one variable can be predicted from the other.
-
-Moderate to Weak Correlations: Values that are closer to 0 indicate a weaker relationship.
-
-### 1.6: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
-```{r}
-# Create a ggplot object with loan amount and annual income
-p <- ggplot(loan_sample, aes(x = annual_inc, y = loan_amnt)) +
-  geom_point(alpha = 0.5) + 
-  labs(title = "Scatter plot of Loan Amount vs Annual Income",
-       x = "Annual Income",
-       y = "Loan Amount") +
-  theme_minimal()
-
-# Convert ggplot object to a plotly object
-p_interactive <- ggplotly(p)
-# p_interactive
-
-```
-
-The areas of high density indicate common combinations of income and loan amounts, which could suggest standard loan products or typical borrower profiles. A wide range of incomes with a relatively narrow range of loan amounts might suggest that the loan amount is less sensitive to income past a certain threshold.
-
-### 1.7: Create a new balanced data set where the two levels of the target variable will be equally represented; Create a bar plot of the newly created target variable. Why is this step necessary?
-```{r}
-loan_sample_balanced <- ovun.sample(Status ~ ., data=loan_sample, method = "under")
+loan_sample_balanced <- ovun.sample(Status ~ ., data=loan_sample_truncated, method = "under")
 loan_sample_under <- data.frame(loan_sample_balanced[["data"]])
 
 # Plot the balance
@@ -298,126 +222,185 @@ ggplot(loan_sample_under, aes(x = Status, fill = Status, group = Status)) +
   scale_fill_brewer(palette = "Set1") +
   theme_minimal() +
   ggtitle("New balanced dataset")
+
 ```
 Balancing a dataset is important for training classification models because it prevents the model from being biased towards the majority class and potentially ignoring the minority class. This is particularly true for datasets where the outcome class of interest (e.g., default on a loan) is much less common than the non-interest class (e.g., non-default). Balancing helps to improve the generalization of the model and its performance on unseen data, especially for the minority class.
 
-
-## Excercise 2
-• Train and test a logistic classifier. Specifically:
-– Divide the sample into training and testing set using 70% for training the algorithm. 
-– Train the classifier and report the coefficients obtained and interpret the results. 
-– Plot the ROC and the Precision/Recall Curve and interpret the results.
-– Produce the confusion matrix and interpret the results.
-– Report the AUC values and the overall accuracy and interpret the results.
-
+### 1.4: Investigating the distribution of the numeric features per the two levels of our target feature
+(i.e. default vs non-default). Discuss the visualizations. Which variables seem to be relevant in predicting the target feature?
 ```{r}
-# Set seed for reproducibility
-set.seed(7)
+# Define columns to exclude (these are column with characters)
+exclude_columns <- c(3, 4, 6, 7, 14)
 
-# Split the data into training (70%) and testing (30%) sets
-splitIndex <- createDataPartition(loan_sample_under$Status, p = 0.7, list = FALSE)
-training_set <- loan_sample_under[splitIndex,]
-testing_set <- loan_sample_under[-splitIndex,]
+# Loop through columns, excluding the specified ones
+for (i in setdiff(1:ncol(loan_sample_under), exclude_columns)) {
+  # Only plot numeric columns
+  if (is.numeric(loan_sample_under[[i]])) {
+    print(ggplot(loan_sample_under, aes_string(y = names(loan_sample_under)[i], color = "Status")) +
+            geom_boxplot() +
+            ylab(names(loan_sample_under[i])) +
+            theme(axis.title.x = element_blank(),
+                  axis.text.x = element_blank(),
+                  axis.ticks.x = element_blank()))
+  }
+}
 ```
+Hier noch text schreiben!
 
-### Brotuto algo
-In the next step, we run the Boruta algo.
+
+### 1.5: Brotuto algorithm
+In the next step, we run the Boruta algorithm.The Boruta algorithm provides a more objective method for determining the importance of features as it is based on repeated, random comparisons rather than human judgment.
 ```{r, echo=FALSE}
 loan_sample_under$Status <- as.factor(loan_sample_under$Status)
 boruta_output <- Boruta(Status~., data = loan_sample_under, doTrace=2)
-```
 
-
-Next, we extract and print the significant attributes. 
-```{r}
+# Print of significant output
 boruta_signif <- getSelectedAttributes(boruta_output, withTentative = TRUE)
 print(boruta_signif)
-```
 
-
-Next, we visualize the results. 
-```{r}
+# Visualisation of the result
 plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
 ```
+Hier weiter machen Abishan!!!
 
-Finally, we can check for multicollinearity which can also be part of the feature selection process. Remember - multicollinearity - one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This can lead to skewed or misleading estimates and conclusions
+Now, we can examine multicollinearity, which occurs when one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This situation can result in skewed or misleading coefficient estimates and conclusions.
 
-In the next step, we look at the correlations that emerge between the variables. Which correlation are you worried about? 
+### 1.6: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
 ```{r}
-# Convert categorical variables to factors
-
-
-correlations = cor(loan_sample_under[-c(3,4,6,7,14)])
+correlations = cor(loan_sample_under[-c(3,4,6,7,14,17)])
 corrplot(correlations) 
 ```
 
 We can also test for the significance of the correlation. The cor_pmat function allow us to visualize the correlations explicitly marking the insignificant correlations. 
 
 ```{r}
-p_value_mat <- cor_pmat(data_new_under[,-c(20:24)])
+p_value_mat <- cor_pmat(loan_sample_under[,-c(3,4,6,7,14,17)])
 ggcorrplot(correlations, type = "lower", p.mat = p_value_mat) 
 ```
 
-Looking at the correlation plots and the output from the Boruta algo, we would keep all variables apart from ratio17. 
+Strong Correlations: Variables with high absolute values of correlation (close to 1 or -1) are considered strongly correlated. These could indicate a redundant or derived relationship where one variable can be predicted from the other. Moderate to Weak Correlations: Values that are closer to 0 indicate a weaker relationship. Looking at the correlation plots and the output from the Boruta algorithm, we would keep all variables. 
 
+### 1.7: Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
 ```{r}
-data_new_under <- data_new_under[-10]
+# Generate a bar plot for each categorical variable
+categorical_vars <- c("home_ownership", "verification_status", "purpose", "addr_state", "application_type")
+# Loop over categorical variables and plot using aes() and without aes_string()
+for (cat_var in categorical_vars) {
+  # Check if the column exists to avoid errors
+  if (!cat_var %in% names(loan_sample_under)) {
+    message(paste("Skipping", cat_var, "as it is not found in the dataset."))
+    next
+  }
+  
+  # Create the plot
+  plot <- loan_sample_under %>%
+    group_by(.data[[cat_var]], Status) %>%
+    summarise(Count = n(), .groups = 'drop') %>%
+    ggplot(aes(x = .data[[cat_var]], y = Count, fill = as.factor(Status))) +
+    geom_bar(stat = "identity", position = position_dodge()) +
+    labs(title = paste("Bar plot of", cat_var, "by Status"), x = cat_var, y = "Count") +
+    scale_fill_discrete(name = "Status") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) # Rotate x labels for readability
+   # Print the plot
+  print(plot)
+}
+
+```
+Hier Text schreiben!
+
+
+
+### 1.7: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
+```{r}
+library(plotly)
+
+# Assuming your data is in a dataframe called loan_sample and
+# the relevant columns are named loan_amnt and annual_inc
+plot_ly(data = loan_sample_under, x = ~loan_amnt, y = ~annual_inc, 
+        type = 'scatter', mode = 'markers', 
+        marker = list(size = 10, opacity = 0.5)) %>%
+  layout(title = 'Association between Loan Amount and Annual Income',
+         xaxis = list(title = 'Loan Amount Requested'),
+         yaxis = list(title = 'Annual Income of Borrower'))
+
+
 ```
 
+The areas of high density indicate common combinations of income and loan amounts, which could suggest standard loan products or typical borrower profiles. A wide range of incomes with a relatively narrow range of loan amounts might suggest that the loan amount is less sensitive to income past a certain threshold.
 
 
 
 
-
-
-
-
-## alter Code ABI / Vla
+## Excercise 2 Train and test a logistic classifier.
+Hier Text schreiben !!!
+### 2.1: Dividing the sample into training and testing set
 ```{r}
+# Split the data into training (70%) and testing (30%) sets
+splitIndex <- createDataPartition(loan_sample_under$Status, p = 0.7, list = FALSE)
+training_set <- loan_sample_under[splitIndex,]
+testing_set <- loan_sample_under[-splitIndex,]
+```
 
-# Split the data into training(70%) and testing(30%) data sets.
-splitIndex <- createDataPartition(y = loan_data$Status, p = 0.7, list = FALSE)
+Hier Text schreiben!
 
-# Training data (70%)
-train_data <- loan_data[splitIndex, ]
-# Checking if the data distribution in the train_data
-PercTable(train_data$Status)
 
-# Testing data (30%)
-test_data <- loan_data[-splitIndex, ]
-# Checking if the data distribution in the test_data
-PercTable(test_data$Status)
+```{r}
+PercTable(loan_sample_under$Status)
+PercTable(training_set$Status)
+PercTable(testing_set$Status)
+```
 
-# Train a logistic regression model (all variables as input)
-model <- glm(Status ~ ., data = train_data, family = "binomial")
+### 2.2:  Train the classifier and report the coefficients obtained and interpret the results. 
+In the next step, we train the logit model. In terms of our inputs i.e. our Xs, we use all variables included in the data_new_under apart from the status, which is our Y. How would you interpret the results printed from the summary fit1? 
+```{r, echo=FALSE}
+fit1 <- glm(Status ~ ., data=training_set,family=binomial())
+summary(fit1)
+```
 
-# Display the coefficients
-summary(model)
+We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
+ ```{r, echo=FALSE}
+significant.variables <- summary(fit1)$coeff[-1,4] < 0.05
+names(significant.variables)[significant.variables == TRUE]
+```
 
-# Predict probabilities on the test set
-predictions_prob <- predict(model, type = "response", newdata = test_data)
+### 2.3: Plot the ROC and the Precision/Recall Curve and interpret the results.
+Next, we aim to evaluate the predictive performance of our model. To do so, we will plot the ROC curve. 
+```{r, echo=FALSE}
+testing_set$fit1_score <- predict(fit1,type='response',testing_set)
+fit1_pred <- prediction(testing_set$fit1_score, testing_set$Status)
+fit1_roc <- performance(fit1_pred, "tpr", "fpr")
+plot(fit1_roc, lwd=1, colorize = TRUE, main = "Fit1: Logit - ROC Curve")
+lines(x=c(0, 1), y=c(0, 1), col="black", lwd=1, lty=3)
+```
+In the next step, we visualize the Precision/Recall Curve. This curve summarizes the trade-off between the true positive rate and the positive predictive value for a predictive model using different probability thresholds.
+```{r}
+fit1_precision <- performance(fit1_pred, measure = "prec", x.measure = "rec")
+plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
+```
 
-# ROC curve using pROC
-roc_obj <- roc(test_data$Status, predictions_prob)
-plot(roc_obj, main="ROC Curve")
-auc(roc_obj)
-
-# Precision-Recall Curve using ROCR
-pred_obj <- prediction(predictions_prob, test_data$Status)
-pr <- performance(pred_obj, measure="prec", x.measure="rec")
-plot(pr, main="Precision-Recall Curve")
-
-# Confusion matrix
-predictions_class <- ifelse(predictions_prob > 0.5, 1, 0)
-cm <- confusionMatrix(as.factor(predictions_class), as.factor(test_data$Status))
+### 2.4: Produce the confusion matrix and interpret the results.
+```{r}
+# Extract the confusion matrix 
+cm <- confusionMatrix(as.factor(round(testing_set$fit1_score)), testing_set$Status)
 print(cm)
+```
+– Report the AUC values and the overall accuracy and interpret the results.
+```{r}
+# AUC
+fit1_auc <- performance(fit1_pred, measure = "auc")
 
 # Overall accuracy
 accuracy <- sum(diag(cm$table)) / sum(cm$table)
-print(paste("Overall Accuracy: ", accuracy))
+
+# Print of the values
+cat("AUC: ", fit1_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy)
 ```
+
 # Excercise 3
-Habe bereits versucht mit factors die accuracy des Models zu verbessern. Hat jedoch keinen Einfluss.
-Mann könnte einen kurzen Text darüber schreiben und erklären, dass wir es versucht haben.
+Thinking about the pre-processing steps that you carried out before training the logistic classifier:
+• Can you think of a way to improve the predictive performance of your data?
+• What can you do differently? (hint: Feel free to be creative and discuss any additional step in data collection and/or data pre-processing that you might try so to improve the results)
+
 
 
