@@ -5,11 +5,6 @@ date: "2023-10-10"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 In the rapidly evolving landscape of financial technology, credit scoring remains a cornerstone in determining the creditworthiness of applicants. This paper delves into the realm of predictive modeling, using a dataset provided by our professors, enriched with comprehensive credit scoring information. The overarching objective of our study is to train a model that efficiently and accurately determines the eligibility of individuals for credit approval.
 
 The task set forth by our professors involves a comprehensive journey through four key exercises. The first exercise is centered around a thorough analysis of the dataset. Here, we delve into understanding the underlying structures, identifying critical variables, and most importantly, balancing the dataset to ensure a fair representation of diverse credit scenarios.
@@ -24,11 +19,13 @@ This paper aims to not only present a robust model for credit scoring but also t
 
 
 ## Load packages and data
-```{r}
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 # Set seed for reproducibility
 set.seed(7)
 
-libraries = c("readr", "tidyverse", "ggplot2", "dplyr", "reshape2", "plotly", "caret", "DescTools", "pROC", "ROCR", "ROSE", "Boruta", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr")
+libraries = c("readr", "tidyverse", "ggplot2", "dplyr", "reshape2", "plotly", "caret", "DescTools", "pROC", "ROCR", "ROSE", "Boruta", "RColorBrewer", "ggcorrplot", "PerformanceAnalytics", "corrr", "networkD3", "reshape", "knitr", "dlookr", "corrplot")
 
 lapply(libraries, function(x) if (!(x %in% installed.packages())) {
   install.packages(x)
@@ -51,7 +48,7 @@ loan_sample_original <- loan_sample
 ### 1.1 Describe the data. Specifically:
 
 #### 1.1.1: Check and report the structure of the data set.
-```{r show_col_types = False}
+```{r}
 str(loan_sample)
 ```
 
@@ -63,7 +60,7 @@ The result of "FALSE" from the check indicates that there are no missing values 
 
 
 #### 1.1.2: How many numeric and how many categorical variables are included in the data? What categorical variable has the most levels in it?
-```{r show_col_types = False}
+```{r}
 # First we have to check whether all variables have been imported in the correct format. 
 first_overview <- overview(loan_sample)
 plot(first_overview)
@@ -93,7 +90,7 @@ cat("There are", numeric_vars_count, "numeric variables and", categorical_vars_c
 
 ```
 
-```{r show_col_types = False}
+```{r}
 categorical_levels <- sapply(loan_sample, function(x) if(is.factor(x)) length(unique(x)) else NA)
 
 # Find the name of the categorical variable with the most levels
@@ -107,14 +104,14 @@ cat("The categorical variable with the most levels in the dataset is:", cat_var_
 ```
 
 #### 1.1.3: Summarize the variables. Discuss the summary statistics obtained.
-```{r show_col_types = False}
+```{r}
 # Categorial Label with the most Levels
 summary(loan_sample)
 ```
 Our loan data includes information on 40,000 loans. The average loan size is about $11,687, but this number can be as low as $1,000 or as high as $40,000, showing that loan amounts are different for different people. The average interest rate on a loan is 12.62%, but some people get lower rates like 5.31%, and others get higher rates up to 27.49%. This shows there are many different interest rates that people are getting. People who have taken out loans make an average of $63,400 a year, but there is a big difference in how much money people make. Some make more, and some make less. The debt-to-income ratio (DTI) tells us how much debt people have compared to their income. On average, this number is 18.22% for the loans we looked at. Looking at how many credit lines people have open, the average is 10, but in total, they might have had up to 21 over time. This tells us about how many loans or credit cards people might be using or have used before. The average amount people owe on their credit lines is $11,995, and they use about half of the credit available to them. This tells us about how much of their available loan money they are using. People also pay about $1,818 in interest on average. This is extra money they pay in addition to the loan they took out. When we look at all the loans and credit people have, the total amount they owe on average is $99,100. This shows that people have a lot of loans or owe a lot of money on their credit lines. Finally, the average limit people have on their credit lines is $24,194. This is how much the bank or loan company lets them borrow in total.
 
 #### 1.1.4: Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
-```{r show_col_types = False}
+```{r}
 # Plot the distribution of the target variable
 ggplot(loan_sample, aes(x = Status, fill = Status)) + 
   geom_bar() +
@@ -128,7 +125,7 @@ The target variable 'Status' in our dataset distinctly categorizes credit approv
 The target variable in our dataset shows a significant imbalance, with a substantially higher number of credits not being approved. This imbalance is important to address because, in machine learning, an unbalanced dataset can lead to biased models that over-predict the majority class, in this case, the non-approved credits. Consequently, balancing the dataset is crucial for training an accurate and reliable logistic classifier that fairly represents both outcomes. 
 
 1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
-```{r show_col_types = False}
+```{r}
 # Histograms
 loan_sample %>% 
   select_if(is.numeric) %>% 
@@ -151,7 +148,7 @@ ggplot(loan_sample, aes(x = open_acc)) +
 ```
 Since the variable ranges from 1 to 22, using 30 bins leads to empty spaces. Adjusting the bins to match the actual value range has provided a clearer, gap-free histogram.
 
-```{r show_col_types = False}
+```{r}
 # Boxplots
 loan_sample %>% 
   select_if(is.numeric) %>% 
@@ -359,7 +356,7 @@ summary(fit1)
 ```
 
 We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
- ```{r, echo=FALSE}
+```{r, echo=FALSE}
 significant.variables <- summary(fit1)$coeff[-1,4] < 0.05
 names(significant.variables)[significant.variables == TRUE]
 ```
@@ -385,7 +382,8 @@ plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
 cm <- confusionMatrix(as.factor(round(testing_set$fit1_score)), testing_set$Status)
 print(cm)
 ```
-– Report the AUC values and the overall accuracy and interpret the results.
+
+### 2.5 Report the AUC values and the overall accuracy and interpret the results.
 ```{r}
 # AUC
 fit1_auc <- performance(fit1_pred, measure = "auc")
@@ -399,8 +397,10 @@ cat("AUC: ", fit1_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy)
 
 # Excercise 3
 Thinking about the pre-processing steps that you carried out before training the logistic classifier:
-• Can you think of a way to improve the predictive performance of your data?
-• What can you do differently? (hint: Feel free to be creative and discuss any additional step in data collection and/or data pre-processing that you might try so to improve the results)
+### 3.1: Can you think of a way to improve the predictive performance of your data?
+
+
+### 3.2: What can you do differently? (hint: Feel free to be creative and discuss any additional step in data collection and/or data pre-processing that you might try so to improve the results)
 
 
 
