@@ -298,6 +298,10 @@ This hybrid model allows for a more informed interpretation, ensuring that the o
 ### 1.5: Boruta algorithm
 In the next step, we run the Boruta algorithm.The Boruta algorithm provides a more objective method for determining the importance of features as it is based on repeated, random comparisons rather than human judgment.
 ```{r, echo=FALSE}
+# Set seed for reproducibility
+set.seed(7)
+
+# Brotuta algorithm
 loan_sample_under$Status <- as.factor(loan_sample_under$Status)
 boruta_output <- Boruta(Status~., data = loan_sample_under, doTrace=2)
 
@@ -369,8 +373,6 @@ for (cat_var in categorical_vars) {
 ```
 Hier Text schreiben!
 
-
-
 ### 1.7: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
 ```{r}
 library(plotly)
@@ -399,6 +401,9 @@ Understanding these density patterns not only sheds light on the typical borrowe
 Hier Text schreiben !!!
 ### 2.1: Dividing the sample into training and testing set
 ```{r}
+# Set seed for reproducibility
+set.seed(7)
+
 # Split the data into training (70%) and testing (30%) sets
 splitIndex <- createDataPartition(loan_sample_under$Status, p = 0.7, list = FALSE)
 training_set <- loan_sample_under[splitIndex,]
@@ -474,7 +479,104 @@ cat("AUC: ", fit1_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy)
 
 ## Excercise 3
 Thinking about the pre-processing steps that you carried out before training the logistic classifier:
-### 3.1: Can you think of a way to improve the predictive performance of your data?
+Can you think of a way to improve the predictive performance of your data?
+
+### 3.1.1: Training the logistic classifier without any preprocessing and feature selection stepps
+```{r}
+# Set seed for reproducibility
+set.seed(7)
+
+# Splitting the data into testing and training data
+splitIndex2 <- createDataPartition(loan_sample$Status, p = 0.7, list = FALSE)
+training_set2 <- loan_sample[splitIndex2,]
+testing_set2 <- loan_sample[-splitIndex2,]
+
+# Percentage table of Status with out preprocessing
+PercTable(loan_sample$Status)
+PercTable(training_set2$Status)
+PercTable(testing_set2$Status)
+
+# Fitting the model
+fit2 <- glm(Status ~ ., data=training_set2,family=binomial())
+summary(fit2)
+
+# We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
+
+significant.variables2 <- summary(fit2)$coeff[-1,4] < 0.05
+names(significant.variables2)[significant.variables2 == TRUE]
+
+testing_set2$fit2_score <- predict(fit2,type='response',testing_set2)
+fit2_pred <- prediction(testing_set2$fit2_score, testing_set2$Status)
+fit2_roc <- performance(fit2_pred, "tpr", "fpr")
+plot(fit2_roc, lwd=1, colorize = TRUE, main = "Fit2: Logit - ROC Curve")
+lines(x=c(0, 1), y=c(0, 1), col="black", lwd=1, lty=3)
+
+fit2_precision <- performance(fit2_pred, measure = "prec", x.measure = "rec")
+plot(fit2_precision, main="Fit2: Logit - Precision vs Recall")
+
+# Extract the confusion matrix 
+cm2 <- confusionMatrix(as.factor(round(testing_set2$fit2_score)), testing_set2$Status)
+print(cm2)
+
+# AUC
+fit2_auc <- performance(fit2_pred, measure = "auc")
+
+# Overall accuracy
+accuracy2 <- sum(diag(cm2$table)) / sum(cm2$table)
+
+# Print of the values
+cat("AUC: ", fit2_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy2)
+```
+
+### 3.1.2: Training the logistic classifier without the collumn application type
+```{r}
+# Set seed for reproducibility
+set.seed(7)
+
+# Deleting column application_type
+loan_sample_under_new <- loan_sample_under[-14]
+
+# Splitting the data into testing and training data
+splitIndex3 <- createDataPartition(loan_sample_under_new$Status, p = 0.7, list = FALSE)
+training_set3 <- loan_sample_under_new[splitIndex3,]
+testing_set3 <- loan_sample_under_new[-splitIndex3,]
+
+# Percentage table of Status with out preprocessing
+PercTable(loan_sample_under_new$Status)
+PercTable(training_set3$Status)
+PercTable(testing_set3$Status)
+
+# Fitting the model
+fit3 <- glm(Status ~ ., data=training_set3,family=binomial())
+summary(fit3)
+
+# We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
+
+significant.variables3 <- summary(fit3)$coeff[-1,4] < 0.05
+names(significant.variables3)[significant.variables3 == TRUE]
+
+testing_set3$fit3_score <- predict(fit3,type='response',testing_set3)
+fit3_pred <- prediction(testing_set3$fit3_score, testing_set3$Status)
+fit3_roc <- performance(fit3_pred, "tpr", "fpr")
+plot(fit3_roc, lwd=1, colorize = TRUE, main = "Fit3: Logit - ROC Curve")
+lines(x=c(0, 1), y=c(0, 1), col="black", lwd=1, lty=3)
+
+fit3_precision <- performance(fit3_pred, measure = "prec", x.measure = "rec")
+plot(fit3_precision, main="Fit3: Logit - Precision vs Recall")
+
+# Extract the confusion matrix 
+cm3 <- confusionMatrix(as.factor(round(testing_set3$fit3_score)), testing_set3$Status)
+print(cm3)
+
+# AUC
+fit3_auc <- performance(fit3_pred, measure = "auc")
+
+# Overall accuracy
+accuracy3 <- sum(diag(cm3$table)) / sum(cm3$table)
+
+# Print of the values
+cat("AUC: ", fit3_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy3)
+```
 
 
 ### 3.2: What can you do differently? (hint: Feel free to be creative and discuss any additional step in data collection and/or data pre-processing that you might try so to improve the results)
