@@ -91,7 +91,7 @@ table(data$status)
 
 Using the PercTable function, we can also obtain both the count and the percentage. What would you say? Is this a well-balanced data set? 
   
-  ```{r, echo=FALSE}
+```{r, echo=FALSE}
 PercTable(data$status)
 ```
 
@@ -178,7 +178,7 @@ data_new_under <- cbind(data_new_under, cols)
 ```
 
 Let's check how the boxplot looks like. Would you make further adjustments?
-  ```{r, fig.width=20, fig.height=20}
+```{r, fig.width=20, fig.height=20}
 boxplot(scale(data_new_under[,c(1:19)]), use.cols = TRUE)
 ```
 
@@ -196,7 +196,7 @@ data_key <- data_new_under %>%
 
 Looking at the box plots below, can you identify some features that can be used for discriminating between the defaulted and not defaulted loans? 
   
-  ```{r}
+```{r}
 for (i in 1:length(data_new_under[,-c(20:24)])) {
   print(ggplot(data_new_under, aes(y = data_new_under[,i], color = status)) + 
           geom_boxplot() + 
@@ -244,7 +244,7 @@ plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance")
 Finally, we can check for multicollinearity which can also be part of the feature selection process. Remember - multicollinearity - one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This can lead to skewed or misleading estimates and conclusions
 
 In the next step, we look at the correlations that emerge between the variables. Which correlation are you worried about? 
-  ```{r}
+```{r}
 correlations = cor(data_new_under[-c(20:24)])
 corrplot(correlations) 
 ```
@@ -286,7 +286,7 @@ PercTable(data.test$status)
 ```
 
 In the next step, we train the logit model. In terms of our inputs i.e. our Xs, we use all variables included in the data_new_under apart from the status, which is our Y. How would you interpret the results printed from the summary fit1? 
-  ```{r, echo=FALSE}
+```{r, echo=FALSE}
 fit1 <- glm(status ~ ., data=data.train,family=binomial())
 summary(fit1)
 ```
