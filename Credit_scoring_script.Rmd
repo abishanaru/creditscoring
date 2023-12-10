@@ -23,7 +23,7 @@ This paper aims to not only present a robust model for credit scoring but also t
 
 ## Load packages and data
 
-```{r setup, include=FALSE, echo=FALSE}
+```{r setup, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Set seed for reproducibility
 set.seed(7)
@@ -500,8 +500,7 @@ PercTable(testing_set2$Status)
 fit2 <- glm(Status ~ ., data=training_set2,family=binomial())
 summary(fit2)
 
-# We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
-
+# Print out only the significant variables with p-value lower than 0.05.
 significant.variables2 <- summary(fit2)$coeff[-1,4] < 0.05
 names(significant.variables2)[significant.variables2 == TRUE]
 
@@ -550,8 +549,7 @@ PercTable(testing_set3$Status)
 fit3 <- glm(Status ~ ., data=training_set3,family=binomial())
 summary(fit3)
 
-# We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
-
+# Print out only the significant variables with p-value lower than 0.05.
 significant.variables3 <- summary(fit3)$coeff[-1,4] < 0.05
 names(significant.variables3)[significant.variables3 == TRUE]
 
