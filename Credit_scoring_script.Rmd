@@ -59,7 +59,7 @@ str(loan_sample)
 # Checking for NAs
 any(is.na(loan_sample))
 ```
-The result of "FALSE" from the check indicates that there are no missing values (NAs) in the "loan_sample" dataset.
+The result of "FALSE" from the check indicates that there are no missing values (NAs) in the "loan_sample" dataset. So the dataset is provided with full values means that we can work with this dataset without cleaning NA's.
 
 
 #### 1.1.2: How many numeric and how many categorical variables are included in the data? What categorical variable has the most levels in it?
@@ -68,7 +68,7 @@ The result of "FALSE" from the check indicates that there are no missing values 
 first_overview <- overview(loan_sample)
 plot(first_overview)
 ```
-It is clearly visible that the columns with the data type character still have to be converted to factors. In addition, the "Status" column is currently still a numeric data type. This must also be converted to factor, as it is a binary variable. 
+It is clearly visible that the columns with the data type character still have to be converted to factors. In addition, the "Status" column is currently still a numeric data type. This must also be converted to factor, as it is a binary variable. To do further analysis this needs to be done to get further data with the same structure to use for our model and analysis.
 
 ```{r}
 loan_sample <- loan_sample %>%
@@ -79,7 +79,7 @@ loan_sample <- loan_sample %>%
 second_overview <- overview(loan_sample)
 plot(second_overview)
 ```
-That looks right, now we can count the number of variables.
+That looks right, now we can count the number of variables. As we can see, there are no anomalies in this bar chart accordingly, we should be able to proceed with these converted data.
 
 ```{r}
 # Count numeric variables in 'loan_sample'
@@ -111,9 +111,23 @@ cat("The categorical variable with the most levels in the dataset is:", cat_var_
 # Categorial Label with the most Levels
 summary(loan_sample)
 ```
-Our loan data includes information on 40,000 loans. The average loan size is about $11,687, but this number can be as low as $1,000 or as high as $40,000, showing that loan amounts are different for different people. The average interest rate on a loan is 12.62%, but some people get lower rates like 5.31%, and others get higher rates up to 27.49%. This shows there are many different interest rates that people are getting. People who have taken out loans make an average of $63,400 a year, but there is a big difference in how much money people make. Some make more, and some make less. The debt-to-income ratio (DTI) tells us how much debt people have compared to their income. On average, this number is 18.22% for the loans we looked at. Looking at how many credit lines people have open, the average is 10, but in total, they might have had up to 21 over time. This tells us about how many loans or credit cards people might be using or have used before. The average amount people owe on their credit lines is $11,995, and they use about half of the credit available to them. This tells us about how much of their available loan money they are using. People also pay about $1,818 in interest on average. This is extra money they pay in addition to the loan they took out. When we look at all the loans and credit people have, the total amount they owe on average is $99,100. This shows that people have a lot of loans or owe a lot of money on their credit lines. Finally, the average limit people have on their credit lines is $24,194. This is how much the bank or loan company lets them borrow in total.
+Our dataset contains information from 40,000 loans, giving us a detailed look into how people handle their finances. On average, folks are requesting loans around $11,687, but it's interesting to note that the range is pretty wide, going from as little as $1,000 to as much as $40,000. This tells us that people have different needs when it comes to borrowing money.
 
-Das hier auch neu schreiben bitte.
+Now, when it comes to interest rates, the average is about 12.62%, but it's quite a spread. Some lucky ones are scoring rates as low as 5.31%, while others are dealing with rates as high as 27.49%. It's a reminder that what you end up with can vary quite a bit.
+
+On the income side of things, the average yearly income for loan applicants is $63,400. But, as expected, there's a range here too. Some folks are pulling in more, and some are pulling in less. This is just a snapshot of the diversity in people's financial situations.
+
+We also took a look at the debt-to-income ratio (DTI), which gives us an idea of how much of a person's income is tied up in paying off debt. On average, it's sitting at 18.22%. It's a useful measure for understanding how comfortably people can manage their debt.
+
+Switching gears to credit lines, on average, people have around 10 open credit lines. But, if we look back over time, some have had as many as 21. This gives us insight into how people handle credit – how many cards or loans they've had in the past.
+
+The average amount owed on these credit lines is $11,995, and people tend to use about half of their available credit. This shows that folks are using their credit but not maxing it out completely.
+
+When it comes to interest payments, the average is around $1,818. That's extra money on top of the initial loan amount. Looking at the big picture, the total average outstanding debt across all loans is $99,100. This tells us that, collectively, there's a significant amount of money being borrowed.
+
+Finally, the average credit limit on people's credit lines is $24,194. This is the maximum amount the bank allows them to borrow. It's a cap on their potential debt.
+
+So, diving into these numbers not only gives us a sense of individual financial situations but also paints a broader picture of how people navigate their finances through loans.
 
 #### 1.1.4: Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
 ```{r}
@@ -125,9 +139,13 @@ ggplot(loan_sample, aes(x = Status, fill = Status)) +
   theme_minimal()
 
 ```
-The target variable 'Status' in our dataset distinctly categorizes credit approval outcomes into two levels: '0' represents a 'No', indicating that the credit has not been approved, whereas '1' signifies a 'Yes', confirming the approval of the credit.
+The 'Status' variable in our dataset serves as a crucial indicator of credit approval outcomes. It distinctly classifies these outcomes into two levels: '0' represents a 'No,' indicating that the credit has not been approved, while '1' signifies a 'Yes,' confirming the approval of the credit.
 
-The target variable in our dataset shows a significant imbalance, with a substantially higher number of credits not being approved. This imbalance is important to address because, in machine learning, an unbalanced dataset can lead to biased models that over-predict the majority class, in this case, the non-approved credits. Consequently, balancing the dataset is crucial for training an accurate and reliable logistic classifier that fairly represents both outcomes. 
+Upon closer inspection, our dataset reveals a notable imbalance in the distribution of these outcomes. Specifically, there is a significantly higher number of instances where credits were not approved (Status '0') compared to those that were approved (Status '1'). This imbalance is a critical aspect to consider, especially in the context of machine learning model development.
+
+In machine learning, an unbalanced dataset can introduce bias into the predictive model. In our case, the imbalance may lead the model to overemphasize the majority class (non-approved credits), potentially resulting in a classifier that tends to predict a 'No' more frequently.
+
+To mitigate this issue, it becomes essential to address the class imbalance before training our predictive model. Balancing the dataset involves techniques such as oversampling the minority class (approved credits), undersampling the majority class (non-approved credits), or using more advanced methods like synthetic data generation. By doing so, we aim to create a more equitable representation of both outcomes in our training data.
 
 #### 1.1.5: Check the distribution of the numeric variables in the data set (include different visual representations).
 ```{r}
@@ -182,9 +200,19 @@ ggplot(loan_sample_long_scaled, aes(x = variable, y = value)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
 
-The box plot illustrated the the distribution of scaled numeric variables. Outliers are visible as individual points outside the box plot. It is visible that most of the variables have some outliers.
+The box plot effectively captures the distribution of scaled numeric variables, and the presence of outliers is evident as individual points outside the box plot. Notably, several variables exhibit outliers, indicating the potential presence of extreme values in our dataset.
 
-When considering how to deal with outliers, it is important to understand their nature and the potential impact on the analysis. If outliers represent errors or anomalies that are not characteristic of the population, they can be removed or corrected. 
+To gain a deeper understanding, it is essential to contextualize these outliers. Are they genuine extreme values reflective of the population, or do they stem from errors in data collection or measurement discrepancies? This distinction is crucial in determining the appropriate course of action.
+
+Understanding the impact of outliers on our analysis is paramount. Outliers can significantly influence statistical measures, potentially skewing measures of central tendency and affecting the overall spread of the data. For instance, they may impact the accuracy of mean values and standard deviations.
+
+A closer look at the box plot reveals specific variables that seem to have more pronounced outliers. Exploring these outliers in the context of the variables they pertain to could reveal valuable insights and guide subsequent steps in the analysis.
+
+Various statistical techniques, such as calculating z-scores or leveraging the interquartile range (IQR), can systematically identify outliers. Implementing these techniques allows for a more rigorous and objective assessment of outlier presence.
+
+When deciding how to address outliers, removal or correction is a common approach. However, alternative strategies exist, including transforming the data, winsorizing (capping extreme values), or stratifying analyses based on the presence of outliers. Each strategy comes with its considerations and potential implications for the overall analysis.
+
+In summary, recognizing and addressing outliers is a nuanced process that requires careful consideration of their nature, impact, and appropriate handling strategies to ensure the integrity of our analysis.
 
 
 ```{r}
@@ -199,6 +227,13 @@ loan_sample %>%
   plot_outlier(one_of(variables_with_high_outlier_ratio))
 
 ```
+As we worked on refining our model, we initially thought removing more outliers would make it better, so we decided to keep 95% of our data and discard the top 5% as outliers. Surprisingly, this move didn't improve the model; in fact, it made it less precise.
+
+Realizing that less might be more in this case, we changed our approach. Instead of removing 5%, we opted for a more cautious strategy, cutting out only 1% of outliers. This way, we're holding onto 99% of our data, hoping to strike a balance between cleaning up noisy data and keeping enough information for the model to learn effectively.
+
+This back-and-forth shows that finding the right balance in handling outliers is a bit of a puzzle, and we're trying to crack it to make our model as accurate and reliable as possible.
+
+
 
 ```{r}
 # Function for adjusting the values to the quantile limits
@@ -231,7 +266,7 @@ ggplot(loan_sample_under, aes(x = Status, fill = Status, group = Status)) +
   ggtitle("New balanced dataset")
 
 ```
-Balancing a dataset is important for training classification models because it prevents the model from being biased towards the majority class and potentially ignoring the minority class. This is particularly true for datasets where the outcome class of interest (e.g., default on a loan) is much less common than the non-interest class (e.g., non-default). Balancing helps to improve the generalization of the model and its performance on unseen data, especially for the minority class.
+Balancing the dataset is key for training models, especially when dealing with imbalanced classes like predicting loan default. This ensures a fair representation of both outcomes, preventing the model from favoring the more common class. By striking this balance, we aim to improve the model's accuracy and fairness in predicting both common and less frequent events, contributing to a more reliable and equitable performance.
 
 ### 1.4: Investigating the distribution of the numeric features per the two levels of our target feature
 (i.e. default vs non-default). Discuss the visualizations. Which variables seem to be relevant in predicting the target feature?
@@ -252,10 +287,15 @@ for (i in setdiff(1:ncol(loan_sample_under), exclude_columns)) {
   }
 }
 ```
-Hier noch text schreiben!
+
+While looking at the boxplots, it's clear that some variables don't show much difference between the 'Status' '0' and '1' categories. Notably, interest rate, annual income, total revenue, and DTI stand out with significant differences between the two statuses. However, manually creating each boxplot can be time-consuming, and interpreting them might lack a systematic approach.
+
+To tackle this, we decided on a more comprehensive method by combining manual boxplot analysis with insights from the Boruta algorithm. This hybrid approach blends both manual examination and algorithmic assistance, aiming for a nuanced understanding of the data and highlighting potential correlations. By doing this, we aim for a well-rounded outcome, drawing on the strengths of both manual and automated analyses to gain a more robust understanding of the dataset's relationships.
+
+This hybrid model allows for a more informed interpretation, ensuring that the observed deviations in specific variables are thoroughly considered within the broader dataset context. It represents a holistic and balanced approach, bringing together human expertise and algorithmic rigor to deepen our understanding of the correlation patterns in our data.
 
 
-### 1.5: Brotuta algorithm
+### 1.5: Boruta algorithm
 In the next step, we run the Boruta algorithm.The Boruta algorithm provides a more objective method for determining the importance of features as it is based on repeated, random comparisons rather than human judgment.
 ```{r, echo=FALSE}
 loan_sample_under$Status <- as.factor(loan_sample_under$Status)
@@ -268,8 +308,12 @@ print(boruta_signif)
 # Visualisation of the result
 plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
 ```
- Hier noch genauer erklären!
-Now, we can examine multicollinearity, which occurs when one predictor variable in a multiple regression model can be linearly predicted from the others with a high degree of accuracy. This situation can result in skewed or misleading coefficient estimates and conclusions.
+With the Boruta method providing valuable insights, the next step in our analysis involves a closer examination of multicollinearity. Multicollinearity arises when one predictor variable in a multiple regression model can be accurately predicted from the others. This phenomenon can lead to skewed or misleading coefficient estimates and draw potentially erroneous conclusions.
+
+In essence, the presence of multicollinearity introduces a level of redundancy among predictor variables, making it challenging to isolate their individual effects on the response variable. When high correlations exist between predictors, it becomes difficult for the regression model to distinguish the unique contributions of each variable, potentially compromising the accuracy and reliability of the model.
+
+Identifying and addressing multicollinearity is critical for refining the integrity of our regression analysis. It allows us to disentangle the interdependencies between predictor variables and ensures that each variable's impact on the response variable is accurately reflected. By navigating the complexities of multicollinearity, we aim to enhance the robustness of our regression model, providing more accurate and trustworthy insights into the relationships between predictors and the target variable.
+
 
 ### 1.6: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
 ```{r}
@@ -277,14 +321,24 @@ correlations = cor(loan_sample_under[-c(3,4,6,7,14,17)])
 corrplot(correlations) 
 ```
 
-We can also test for the significance of the correlation. The cor_pmat function allow us to visualize the correlations explicitly marking the insignificant correlations. 
+In addition to exploring correlations, we delve deeper into their statistical significance. Utilizing the cor_pmat function, we gain the ability to explicitly assess the significance of each correlation, with a distinct focus on highlighting the insignificant ones.
+
+This method goes beyond merely identifying correlations; it allows us to scrutinize the strength and reliability of each correlation coefficient. By explicitly marking correlations that are deemed statistically insignificant, we enhance our ability to distinguish between robust relationships and those that may occur by chance.
+
+The cor_pmat function becomes a valuable tool in this context, offering a visual representation that guides us in pinpointing correlations that warrant closer scrutiny. This nuanced approach not only emphasizes the presence of correlations but also refines our understanding by discerning the statistical significance associated with each, providing a more comprehensive evaluation of the interplay between variables.
 
 ```{r}
 p_value_mat <- cor_pmat(loan_sample_under[,-c(3,4,6,7,14,17)])
 ggcorrplot(correlations, type = "lower", p.mat = p_value_mat) 
 ```
 
-Strong Correlations: Variables with high absolute values of correlation (close to 1 or -1) are considered strongly correlated. These could indicate a redundant or derived relationship where one variable can be predicted from the other. Moderate to Weak Correlations: Values that are closer to 0 indicate a weaker relationship. Looking at the correlation plots and the output from the Boruta algorithm, we would keep all variables. 
+When we look at how variables in our dataset relate to each other, those with a high correlation, close to 1 or -1, are seen as strongly linked. It suggests that knowing one variable might pretty much tell us about the other, hinting at a kind of redundant or closely connected relationship.
+
+Conversely, when the correlation is closer to 0, it means the relationship is weaker. It could be moderate or just a faint connection between variables. This indicates that understanding one variable might not necessarily give us a good prediction for another.
+
+In our analysis, we checked correlation plots and got insights from the Boruta algorithm. Interestingly, despite seeing varying strengths in correlations, we've decided to keep all the variables. The reason behind this choice is that even if the relationships are not super strong, each variable brings in unique and valuable information.
+
+The idea here is to appreciate the mix of both strong and not-so-strong connections between variables. Keeping all the variables allows us to have a more complete understanding of the dataset, considering the nuances and diverse information each variable brings to the table.
 
 ### 1.7: Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
 ```{r}
@@ -333,8 +387,11 @@ plot_ly(data = loan_sample_under, x = ~loan_amnt, y = ~annual_inc,
 
 ```
 
-The areas of high density indicate common combinations of income and loan amounts, which could suggest standard loan products or typical borrower profiles. A wide range of incomes with a relatively narrow range of loan amounts might suggest that the loan amount is less sensitive to income past a certain threshold.
+As we examine the density plot, the regions with high density unveil common combinations of income and loan amounts, offering insights into potential standard loan products or characteristic borrower profiles. The clustering of data points in these areas indicates prevalent patterns that could be indicative of well-established loan products catering to specific income brackets or borrower demographics.
 
+Notably, the observation of a wide range of incomes accompanied by a relatively narrow range of loan amounts prompts considerations about the sensitivity of loan amounts to income variations. This pattern may imply that, beyond a certain income threshold, the loan amount becomes less sensitive to further income increases. In other words, there seems to be a saturation point where increases in income may not significantly impact the loan amount, suggesting a potential cap or standardization in the lending process.
+
+Understanding these density patterns not only sheds light on the typical borrower scenarios but also hints at the underlying dynamics between income and loan amounts. It invites further exploration into the factors influencing loan decisions and provides valuable insights for refining lending strategies or tailoring financial products to meet the diverse needs of different income segments.
 
 
 
@@ -380,7 +437,14 @@ fit1_roc <- performance(fit1_pred, "tpr", "fpr")
 plot(fit1_roc, lwd=1, colorize = TRUE, main = "Fit1: Logit - ROC Curve")
 lines(x=c(0, 1), y=c(0, 1), col="black", lwd=1, lty=3)
 ```
-In the next step, we visualize the Precision/Recall Curve. This curve summarizes the trade-off between the true positive rate and the positive predictive value for a predictive model using different probability thresholds.
+In the subsequent step of our analysis, we delve into the intricacies of our model by visualizing the Precision/Recall Curve. This curve serves as a comprehensive illustration of the delicate balance between the true positive rate and the positive predictive value across various probability thresholds.
+
+As we navigate through different probability thresholds, the Precision/Recall Curve provides a nuanced perspective on the model's performance. It vividly captures the trade-offs inherent in our predictive model, offering valuable insights into how adjusting the probability threshold impacts both precision and recall.
+
+Precision, representing the accuracy of positive predictions, and recall, measuring the model's ability to capture all actual positive instances, are pivotal metrics in evaluating classifier performance. By exploring this curve, we gain a deeper understanding of the model's behavior across a spectrum of probability thresholds, enabling us to make informed decisions about the optimal threshold for our specific use case.
+
+This visual representation not only aids in model evaluation but also guides us in fine-tuning our predictive approach for achieving the desired balance between precision and recall, aligning with the specific objectives and requirements of our analysis.
+
 ```{r}
 fit1_precision <- performance(fit1_pred, measure = "prec", x.measure = "rec")
 plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
