@@ -113,6 +113,8 @@ summary(loan_sample)
 ```
 Our loan data includes information on 40,000 loans. The average loan size is about $11,687, but this number can be as low as $1,000 or as high as $40,000, showing that loan amounts are different for different people. The average interest rate on a loan is 12.62%, but some people get lower rates like 5.31%, and others get higher rates up to 27.49%. This shows there are many different interest rates that people are getting. People who have taken out loans make an average of $63,400 a year, but there is a big difference in how much money people make. Some make more, and some make less. The debt-to-income ratio (DTI) tells us how much debt people have compared to their income. On average, this number is 18.22% for the loans we looked at. Looking at how many credit lines people have open, the average is 10, but in total, they might have had up to 21 over time. This tells us about how many loans or credit cards people might be using or have used before. The average amount people owe on their credit lines is $11,995, and they use about half of the credit available to them. This tells us about how much of their available loan money they are using. People also pay about $1,818 in interest on average. This is extra money they pay in addition to the loan they took out. When we look at all the loans and credit people have, the total amount they owe on average is $99,100. This shows that people have a lot of loans or owe a lot of money on their credit lines. Finally, the average limit people have on their credit lines is $24,194. This is how much the bank or loan company lets them borrow in total.
 
+Das hier auch neu schreiben bitte.
+
 #### 1.1.4: Check the levels of the target variable by choosing the appropriate visualization. Is the target variable balanced?
 ```{r}
 # Plot the distribution of the target variable
@@ -384,6 +386,9 @@ fit1_precision <- performance(fit1_pred, measure = "prec", x.measure = "rec")
 plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
 ```
 Hier noch genau erklären und herausfinden warum es ein Sprung macht.
+Erklärung von Chat GPT:
+Die Kurve kann Unregelmäßigkeiten in der Verteilung der Klassifizierungswahrscheinlichkeiten widerspiegeln. Ein kleiner Satz von Beispielen, die sehr sicher als positiv klassifiziert werden, gefolgt von einer größeren Gruppe von Beispielen mit weniger Sicherheit, könnte zu einem solchen Sprung führen.
+
 ### 2.4: Produce the confusion matrix and interpret the results.
 ```{r}
 # Extract the confusion matrix 
