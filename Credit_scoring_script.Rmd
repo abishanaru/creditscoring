@@ -393,12 +393,18 @@ plot_ly(data = loan_sample_under, x = ~loan_amnt, y = ~annual_inc,
 
 As we examine the density plot, the regions with high density unveil common combinations of income and loan amounts, offering insights into potential standard loan products or characteristic borrower profiles. The clustering of data points in these areas indicates prevalent patterns that could be indicative of well-established loan products catering to specific income brackets or borrower demographics.
 
-Notably, the observation of a wide range of incomes accompanied by a relatively narrow range of loan amounts prompts considerations about the sensitivity of loan amounts to income variations. This pattern may imply that, beyond a certain income threshold, the loan amount becomes less sensitive to further income increases. In other words, there seems to be a saturation point where increases in income may not significantly impact the loan amount, suggesting a potential cap or standardization in the lending process.
+Up to a salary of 20k, people tend to apply for a maximum loan of 10k. With a salary of around 40k, the requested loan amount increases to about 20k. Surprisingly, at a salary of 60k, the loan application amount is around 25k. This suggests that the increase in loan amount is not directly proportional to the income; rather, it seems to follow a diminishing trend. Once again, the exception here confirms the rule, showing that higher loans are sought with lower incomes and the other way around.
 
-Understanding these density patterns not only sheds light on the typical borrower scenarios but also hints at the underlying dynamics between income and loan amounts. It invites further exploration into the factors influencing loan decisions and provides valuable insights for refining lending strategies or tailoring financial products to meet the diverse needs of different income segments.
 
 ## Excercise 2 Train and test a logistic classifier.
-Hier Text schreiben !!!
+
+We divided the data into a 30/70 ratio, allocating 70% of the data for training purposes and reserving the remaining 30% for testing. This approach ensures that our model is trained on a substantial portion of the dataset, allowing it to learn patterns and relationships. The logistic classifier serves as our chosen model, given our specific goal of evaluating whether a loan is granted or not, as indicated by the 'Status' column.
+
+The training phase involves exposing the model to the majority of the data, enabling it to grasp the underlying patterns and relationships. Subsequently, we assess its performance on the reserved testing set, which represents new, unseen data. This evaluation provides valuable insights into how well the model generalizes to real-world scenarios.
+
+By leveraging this 30/70 split and utilizing a logistic classifier, our aim is to develop a robust and accurate model capable of making reliable predictions regarding loan approval based on the provided input features. This process aligns with best practices in machine learning, striking a balance between training and evaluation to ensure the model's effectiveness in real-world applications.
+
+
 ### 2.1: Dividing the sample into training and testing set
 ```{r}
 # Set seed for reproducibility
@@ -410,7 +416,6 @@ training_set <- loan_sample_under[splitIndex,]
 testing_set <- loan_sample_under[-splitIndex,]
 ```
 
-Hier Text schreiben!
 
 
 ```{r}
@@ -421,6 +426,8 @@ PercTable(testing_set$Status)
 
 ### 2.2:  Train the classifier and report the coefficients obtained and interpret the results. 
 In the next step, we train the logit model. In terms of our inputs i.e. our Xs, we use all variables included in the data_new_under apart from the status, which is our Y. How would you interpret the results printed from the summary fit1? 
+
+
 ```{r, echo=FALSE}
 fit1 <- glm(Status ~ ., data=training_set,family=binomial())
 summary(fit1)
