@@ -1,7 +1,7 @@
 ---
 title: "Credit Scoring SBD2"
 author: "Abishan Arumugavel, Vladyslav Gorbunov, Gilles Nikles, Josua Reich"
-date: "2023-10-10"
+date: "2023-12-11"
 output:
   html_document:
     toc: yes
