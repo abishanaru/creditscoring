@@ -626,13 +626,39 @@ Finally, thinking about putting your model into action and basing credit decisio
 • What kind of challenges may a company face if it would use your model in their daily business, in particular in regard to ethical challenges and moral obligations companies have? Please refer to the „common ethical issues in the context the creation of value from data” (see slides week 11) in your answer.:
 
 Data and Privacy security:
-When using customer data, it is crucial to ensure that this information is securely stored in accordance with the data protection regulations of the respective economic region. Additionally, measures should be implemented to protect against security vulnerabilities. In Switzerland, for instance, this process would likely fall under the jurisdiction of 'FinMa.' The release of customer data, whether due to hacking incidents, other errors, or system malfunctions, could have a significantly adverse impact on customers.
+When using customer data, it is crucial to ensure that this information is securely stored in accordance with the data protection regulations of the respective economic region. Additionally, measures should be implemented to protect against security vulnerabilities. In Switzerland, for instance, this process would likely fall under the jurisdiction of "FinMa" The release of customer data, whether due to hacking incidents, other errors, or system malfunctions, could have a significantly adverse impact on customers.
 
 Algorithmic Bias & Fairness:
 Models may inadvertently incorporate biases present in the training data, leading to unfair treatment of certain groups. This is particularly sensitive in credit scoring, which can affect an individual's financial opportunities.
 
+Accountability & Responsibility:
+Companies must be able to account for the decisions made by their models. This means having clear processes in place for when things go wrong or when the model's decisions have a significant impact on an individual's life, such as being denied a loan.
+
+Impact on the Workforce:
+The introduction of AI and machine learning models into business processes can disrupt job markets, potentially leading to job displacement. Companies have a moral obligation to consider how their use of technology will impact their workforce and to take steps to mitigate negative impacts.
 
 
 • Can you think of a way how companies can overcome or at least mitigate the issues that you described above?
 
+Enhance Transparency: 
+By being open about how their models work and the data they use, companies can build trust with their clients and stakeholders.
+
+Implement Bias Auditing Procedures: 
+Regularly test and update models to ensure that they are free from bias and make corrections where necessary.
+Establish Governance Frameworks: Create robust data governance frameworks that outline how data is to be used, managed, and protected.
+
+Develop Ethical Guidelines: 
+Create and adhere to a set of ethical guidelines that dictate how AI and data analytics are to be used in the business.
+
+Invest in Employee Training: 
+Invest in training for employees to ensure that they understand the ethical implications of their work and the technology they use.
+
+Engage with Stakeholders: 
+Include stakeholders in the discussion about how AI is used in the business and the impacts it may have on various groups.
+
+
+By addressing these challenges proactively, companies can not only ensure they are meeting their ethical obligations but also build a foundation of trust with customers and the wider public
+
+Conclusion:
+In conclusion we are not really happy with how our model workes because its to inaccurate. We discussed this issue in our group and are thinking about that we could try to use other and even broader datasets to get a better accuracy and figure out how to make this model work properly.
 
