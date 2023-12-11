@@ -344,7 +344,7 @@ The idea here is to appreciate the mix of both strong and not-so-strong connecti
 ```{r}
 # Generate a bar plot for each categorical variable
 categorical_vars <- c("grade", "home_ownership", "verification_status", "purpose", "application_type")
-# Loop over categorical variables and plot using aes() and without aes_string()
+# Loop over categorical variables and plot
 for (cat_var in categorical_vars) {
   # Check if the column exists to avoid errors
   if (!cat_var %in% names(loan_sample_under)) {
