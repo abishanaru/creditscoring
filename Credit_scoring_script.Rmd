@@ -414,18 +414,18 @@ set.seed(7)
 splitIndex <- createDataPartition(loan_sample_under$Status, p = 0.7, list = FALSE)
 training_set <- loan_sample_under[splitIndex,]
 testing_set <- loan_sample_under[-splitIndex,]
-```
 
-
-
-```{r}
 PercTable(loan_sample_under$Status)
 PercTable(training_set$Status)
 PercTable(testing_set$Status)
 ```
+It can be seen that positive and negative status values have been fairly distributed across the training and testing datasets.
+
 
 ### 2.2:  Train the classifier and report the coefficients obtained and interpret the results. 
 In the next step, we train the logit model. In terms of our inputs i.e. our Xs, we use all variables included in the data_new_under apart from the status, which is our Y. How would you interpret the results printed from the summary fit1? 
+
+
 
 
 ```{r, echo=FALSE}
@@ -433,11 +433,18 @@ fit1 <- glm(Status ~ ., data=training_set,family=binomial())
 summary(fit1)
 ```
 
-We can print out only the significant variables with p-value lower than 0.05. We notice that 9 variables are found statistically significant. 
+When interest rates go up, the chances of getting a loan approved also increase. Other factors like 'grade,' 'home ownership,' 'annual income,' and 'total interest received' play a significant role too.
+
+The starting point for non-approval (Status '0') is around -2.5. Lower p-values mean a stronger impact of a variable. 
+
+
 ```{r, echo=FALSE}
 significant.variables <- summary(fit1)$coeff[-1,4] < 0.05
 names(significant.variables)[significant.variables == TRUE]
 ```
+We can print out only the significant variables with p-value lower than 0.05. We notice that 14 variables are found statistically significant.
+
+
 
 ### 2.3: Plot the ROC and the Precision/Recall Curve and interpret the results.
 Next, we aim to evaluate the predictive performance of our model. To do so, we will plot the ROC curve. 
@@ -456,13 +463,15 @@ Precision, representing the accuracy of positive predictions, and recall, measur
 
 This visual representation not only aids in model evaluation but also guides us in fine-tuning our predictive approach for achieving the desired balance between precision and recall, aligning with the specific objectives and requirements of our analysis.
 
+We observed that our ROC curve is not ideal. While the curve is present, ideally, it should have a more pronounced separation from the linear line and a steeper ascent at the beginning. But it shows that the analysis isn't made to wrong just the model could be tarined better or we need a different type of dataset.
+
 ```{r}
 fit1_precision <- performance(fit1_pred, measure = "prec", x.measure = "rec")
 plot(fit1_precision, main="Fit1: Logit - Precision vs Recall")
 ```
-Hier noch genau erklären und herausfinden warum es ein Sprung macht.
-Erklärung von Chat GPT:
-Die Kurve kann Unregelmäßigkeiten in der Verteilung der Klassifizierungswahrscheinlichkeiten widerspiegeln. Ein kleiner Satz von Beispielen, die sehr sicher als positiv klassifiziert werden, gefolgt von einer größeren Gruppe von Beispielen mit weniger Sicherheit, könnte zu einem solchen Sprung führen.
+The curve starts with a high precision at low recall, which could indicate that the model is initially very selective and only classifies as positive those cases for which it is very certain. This leads to high precision, but not many actual positive cases are detected. With increasing recall, i.e. when the model tries to capture more positive cases, the precision decreases. This shows the typical trade-off relationship between precision and recall: if you try to detect more positive cases (increase the recall), the precision usually decreases because the model then also misclassifies more cases as positive.
+ 
+An ideal model would have a curve near the upper right corner of the graph, which means that it can achieve both high precision and high recall
 
 ### 2.4: Produce the confusion matrix and interpret the results.
 ```{r}
@@ -482,10 +491,15 @@ accuracy <- sum(diag(cm$table)) / sum(cm$table)
 # Print of the values
 cat("AUC: ", fit1_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy)
 ```
+The AUC, or "Area Under the Curve," is a measure of the performance of a classification model, and a value of 69.61645 corresponds to approximately 69.62%. This value indicates how well the model can distinguish between classes; a value of 100% would mean perfect discrimination, while 50% indicates no better than random chance – akin to flipping a coin. Although an AUC of around 69.62% suggests that the model is better than random, it is often insufficient in many applications, especially in critical areas like credit scoring. In credit scoring, higher standards of predictive accuracy are demanded because misclassifications can lead to financial losses or unjustified credit denial.
+ 
+The overall accuracy of the model is 64.00128%, which is only marginally better than making a random choice. An accuracy rate of about 64% is frequently inadequate for decisions where the reliability of the prediction is of great importance, such as determining an individual's creditworthiness. With such an accuracy rate, the risk of incorrectly classifying individuals as creditworthy or not is relatively high. Practically, this would mean that nearly four out of ten credit decisions might be incorrect, which could have significant adverse effects for both lenders and potential borrowers. Therefore, it would be crucial to further refine and improve the model to achieve higher accuracy before employing it in a real-world credit lending process.
+
 
 ## Excercise 3
 Thinking about the pre-processing steps that you carried out before training the logistic classifier:
 Can you think of a way to improve the predictive performance of your data?
+
 
 ### 3.1.1: Training the logistic classifier without any preprocessing and feature selection stepps
 ```{r}
@@ -532,6 +546,8 @@ accuracy2 <- sum(diag(cm2$table)) / sum(cm2$table)
 # Print of the values
 cat("AUC: ", fit2_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy2)
 ```
+We discovered that our model exhibited greater precision without any preprocessing. This led us to reconsider the impact of outlier removal, and it appears that their presence was, in fact, crucial for achieving a more accurate model with higher precision. Deleting outliers and balancing the dataset seemed to have adversely affected the model's performance, prompting us to recognize the importance of these data points in obtaining a robust and precise model. Through balancing we lost round about 75% of our basis data which led us to way less data with which we could have trained our model.
+
 
 ### 3.1.2: Training the logistic classifier without the collumn application type
 ```{r}
@@ -581,12 +597,42 @@ accuracy3 <- sum(diag(cm3$table)) / sum(cm3$table)
 # Print of the values
 cat("AUC: ", fit3_auc@y.values[[1]]*100, "\nOverall Accuracy: ", accuracy3)
 ```
-
+By removing the 'application type' feature, we were able to make a slight improvement in our model's accuracy. However, the accuracy is still far from being sufficient to deploy the model in a loan approval process.
 
 ### 3.2: What can you do differently? (hint: Feel free to be creative and discuss any additional step in data collection and/or data pre-processing that you might try so to improve the results)
+
+Historical Data:
+
+Historical data is the backbone of predictive modeling in credit scoring. It encompasses records of past financial behavior, including loan applications, repayment histories, defaults, and recoveries. Analyzing this data helps in understanding trends and identifying patterns that could predict future loan performance. For example, by examining the characteristics of loans that have defaulted in the past, one can often find indicators that may signal a potential future default. Moreover, historical data allows for the backtesting of models to ensure they perform well on unseendata before deployment.
+
+
+Broader Data Sources:
+
+To improve the generalizability of a model – its ability to perform well across various populations and economic conditions – incorporating broader data sources is key. This means looking beyond the traditional credit reports and including alternative data such as rent payments, utility bill history, and even non-financial personal data. The premise is that the more diverse the data, the less the model relies on patterns specific to a particular dataset, which can reduce overfitting. Overfitting occurs when a model learns the detail and noise in the training data to the extent that it negatively impacts the performance of the model on new data. By training on a more comprehensive set of data points, the model can better capture the complexities of human financial behavior and thus generalize better when applied to the broader population.
+
+
+Costumer Data:
+
+Incorporating detailed customer data can further refine a model's predictions. This data can include information provided by the customer during the application process, like employment stability, income level, education, and even lifestyle choices. With the customer's consent, more granular data such as transaction histories or savings patterns can be used to construct a more nuanced profile. For example, consistent saving patterns might indicate financial stability, which could be a positive signal in credit scoring.
+
+Feature selection:
+
+feature selection is an iterative process, and it's crucial to strike a balance between model complexity and predictive accuracy. Regularly validating and updating the feature set based on ongoing analysis and performance monitoring is essential for maintaining a robust credit scoring model.
+
 
 
 # Excercise 4
 Finally, thinking about putting your model into action and basing credit decisions on the prediction that it generates:
-• What kind of challenges may a company face if it would use your model in their daily business, in particular in regard to ethical challenges and moral obligations companies have? Please refer to the „common ethical issues in the context the creation of value from data” (see slides week 11) in your answer.
+• What kind of challenges may a company face if it would use your model in their daily business, in particular in regard to ethical challenges and moral obligations companies have? Please refer to the „common ethical issues in the context the creation of value from data” (see slides week 11) in your answer.:
+
+Data and Privacy security:
+When using customer data, it is crucial to ensure that this information is securely stored in accordance with the data protection regulations of the respective economic region. Additionally, measures should be implemented to protect against security vulnerabilities. In Switzerland, for instance, this process would likely fall under the jurisdiction of 'FinMa.' The release of customer data, whether due to hacking incidents, other errors, or system malfunctions, could have a significantly adverse impact on customers.
+
+Algorithmic Bias & Fairness:
+Models may inadvertently incorporate biases present in the training data, leading to unfair treatment of certain groups. This is particularly sensitive in credit scoring, which can affect an individual's financial opportunities.
+
+
+
 • Can you think of a way how companies can overcome or at least mitigate the issues that you described above?
+
+
