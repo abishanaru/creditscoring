@@ -290,57 +290,7 @@ To tackle this, we decided on a more comprehensive method by combining manual bo
 
 This hybrid model allows for a more informed interpretation, ensuring that the observed deviations in specific variables are thoroughly considered within the broader dataset context. It represents a holistic and balanced approach, bringing together human expertise and algorithmic rigor to deepen our understanding of the correlation patterns in our data.
 
-
-### 1.5: Boruta algorithm
-In the next step, we run the Boruta algorithm.The Boruta algorithm provides a more objective method for determining the importance of features as it is based on repeated, random comparisons rather than human judgment.
-```{r, echo=FALSE}
-# Set seed for reproducibility
-set.seed(7)
-
-# Brotuta algorithm
-loan_sample_under$Status <- as.factor(loan_sample_under$Status)
-boruta_output <- Boruta(Status~., data = loan_sample_under, doTrace=2)
-
-# Print of significant output
-boruta_signif <- getSelectedAttributes(boruta_output, withTentative = TRUE)
-print(boruta_signif)
-
-# Visualisation of the result
-plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
-```
-With the Boruta method providing valuable insights, the next step in our analysis involves a closer examination of multicollinearity. Multicollinearity arises when one predictor variable in a multiple regression model can be accurately predicted from the others. This phenomenon can lead to skewed or misleading coefficient estimates and draw potentially erroneous conclusions.
-
-In essence, the presence of multicollinearity introduces a level of redundancy among predictor variables, making it challenging to isolate their individual effects on the response variable. When high correlations exist between predictors, it becomes difficult for the regression model to distinguish the unique contributions of each variable, potentially compromising the accuracy and reliability of the model.
-
-Identifying and addressing multicollinearity is critical for refining the integrity of our regression analysis. It allows us to disentangle the interdependencies between predictor variables and ensures that each variable's impact on the response variable is accurately reflected. By navigating the complexities of multicollinearity, we aim to enhance the robustness of our regression model, providing more accurate and trustworthy insights into the relationships between predictors and the target variable.
-
-
-### 1.6: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
-```{r}
-correlations = cor(loan_sample_under[-c(3,4,6,7,14,17)])
-corrplot(correlations) 
-```
-
-In addition to exploring correlations, we delve deeper into their statistical significance. Utilizing the cor_pmat function, we gain the ability to explicitly assess the significance of each correlation, with a distinct focus on highlighting the insignificant ones.
-
-This method goes beyond merely identifying correlations; it allows us to scrutinize the strength and reliability of each correlation coefficient. By explicitly marking correlations that are deemed statistically insignificant, we enhance our ability to distinguish between robust relationships and those that may occur by chance.
-
-The cor_pmat function becomes a valuable tool in this context, offering a visual representation that guides us in pinpointing correlations that warrant closer scrutiny. This nuanced approach not only emphasizes the presence of correlations but also refines our understanding by discerning the statistical significance associated with each, providing a more comprehensive evaluation of the interplay between variables.
-
-```{r}
-p_value_mat <- cor_pmat(loan_sample_under[,-c(3,4,6,7,14,17)])
-ggcorrplot(correlations, type = "lower", p.mat = p_value_mat) 
-```
-
-When we look at how variables in our dataset relate to each other, those with a high correlation, close to 1 or -1, are seen as strongly linked. It suggests that knowing one variable might pretty much tell us about the other, hinting at a kind of redundant or closely connected relationship.
-
-Conversely, when the correlation is closer to 0, it means the relationship is weaker. It could be moderate or just a faint connection between variables. This indicates that understanding one variable might not necessarily give us a good prediction for another.
-
-In our analysis, we checked correlation plots and got insights from the Boruta algorithm. Interestingly, despite seeing varying strengths in correlations, we've decided to keep all the variables. The reason behind this choice is that even if the relationships are not super strong, each variable brings in unique and valuable information.
-
-The idea here is to appreciate the mix of both strong and not-so-strong connections between variables. Keeping all the variables allows us to have a more complete understanding of the dataset, considering the nuances and diverse information each variable brings to the table.
-
-### 1.7: Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
+### 1.5: Use a bar plot visualization to investigate the associations between the categorical variables and the target feature.
 ```{r}
 # Generate a bar plot for each categorical variable
 categorical_vars <- c("grade", "home_ownership", "verification_status", "purpose", "application_type")
@@ -367,7 +317,65 @@ for (cat_var in categorical_vars) {
 }
 
 ```
-Hier Text schreiben!
+For this analysis, we made use of a loop to keep the code tidy. A noteworthy observation is that in stage D, the ratio of '1' to '0' is nearly twice as high, leading to a noticeable difference. On the flip side, in stage A, we see the opposite trend. Moving on to the Home Ownership plot, it becomes apparent that individuals who rent a house or apartment have higher chances of being creditworthy compared to those with a mortgage, where the odds are notably lower. Interestingly, no significant influence is observed for individuals who already own property.
+
+In the subsequent graph, the significance of having a verified source of income on creditworthiness is emphasized. Moreover, it's worth noting whether only the source is verified or if the exact data is also confirmed. This aligns logically with the idea that such verification substantially reduces the bank's risk, thereby significantly enhancing data security.
+
+Debt consolidation stands out with a high occurrence. We speculate that the data might be from the USA or other countries, as we believe such a trend might be more of an exclusion criterion in Switzerland. Nevertheless, debt consolidation can also make economic sense, allowing individuals to pay lower interest rates on existing loans. The criterion of owning a credit card is remarkably high, indicating their common use. However, it doesn't seem to have a significant impact on the approval of credit applications.
+
+The Application Type is intriguing, revealing that a lot more people opt for an individual loan, while very few consider a joint application. Surprisingly, though, it doesn't play a substantial role in influencing credit approval.
+
+
+### 1.6: Boruta algorithm
+In the next step, we run the Boruta algorithm.The Boruta algorithm provides a more objective method for determining the importance of features as it is based on repeated, random comparisons rather than human judgment.
+```{r, echo=FALSE}
+# Set seed for reproducibility
+set.seed(7)
+
+# Boruta algorithm
+loan_sample_under$Status <- as.factor(loan_sample_under$Status)
+boruta_output <- Boruta(Status~., data = loan_sample_under, doTrace=2)
+
+# Print of significant output
+boruta_signif <- getSelectedAttributes(boruta_output, withTentative = TRUE)
+print(boruta_signif)
+
+# Visualisation of the result
+plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance") 
+```
+With the Boruta method providing valuable insights, the next step in our analysis involves a closer examination of multicollinearity. Multicollinearity arises when one predictor variable in a multiple regression model can be accurately predicted from the others. This phenomenon can lead to skewed or misleading coefficient estimates and draw potentially erroneous conclusions.
+
+In essence, the presence of multicollinearity introduces a level of redundancy among predictor variables, making it challenging to isolate their individual effects on the response variable. When high correlations exist between predictors, it becomes difficult for the regression model to distinguish the unique contributions of each variable, potentially compromising the accuracy and reliability of the model.
+
+Identifying and addressing multicollinearity is critical for refining the integrity of our regression analysis. It allows us to disentangle the interdependencies between predictor variables and ensures that each variable's impact on the response variable is accurately reflected. By navigating the complexities of multicollinearity, we aim to enhance the robustness of our regression model, providing more accurate and trustworthy insights into the relationships between predictors and the target variable.
+
+
+### 1.7: Visualize the correlations that emerge between the numerical features. Discuss the results. Which variables are highly correlated? Decide whether you keep all variables.
+```{r}
+correlations = cor(loan_sample_under[-c(3,4,6,7,14,17)])
+corrplot(correlations) 
+```
+
+In addition to exploring correlations, we delve deeper into their statistical significance. Utilizing the cor_pmat function, we gain the ability to explicitly assess the significance of each correlation, with a distinct focus on highlighting the insignificant ones.
+
+This method goes beyond merely identifying correlations; it allows us to scrutinize the strength and reliability of each correlation coefficient. By explicitly marking correlations that are deemed statistically insignificant, we enhance our ability to distinguish between robust relationships and those that may occur by chance.
+
+The cor_pmat function becomes a valuable tool in this context, offering a visual representation that guides us in pinpointing correlations that warrant closer scrutiny. This nuanced approach not only emphasizes the presence of correlations but also refines our understanding by discerning the statistical significance associated with each, providing a more comprehensive evaluation of the interplay between variables.
+
+```{r}
+p_value_mat <- cor_pmat(loan_sample_under[,-c(3,4,6,7,14,17)])
+ggcorrplot(correlations, type = "lower", p.mat = p_value_mat) 
+```
+
+When we look at how variables in our dataset relate to each other, those with a high correlation, close to 1 or -1, are seen as strongly linked. It suggests that knowing one variable might pretty much tell us about the other, hinting at a kind of redundant or closely connected relationship.
+
+Conversely, when the correlation is closer to 0, it means the relationship is weaker. It could be moderate or just a faint connection between variables. This indicates that understanding one variable might not necessarily give us a good prediction for another.
+
+In our analysis, we checked correlation plots and got insights from the Boruta algorithm. Interestingly, despite seeing varying strengths in correlations, we've decided to keep all the variables. The reason behind this choice is that even if the relationships are not super strong, each variable brings in unique and valuable information.
+
+The idea here is to appreciate the mix of both strong and not-so-strong connections between variables. Keeping all the variables allows us to have a more complete understanding of the dataset, considering the nuances and diverse information each variable brings to the table.
+
+
 
 ### 1.8: Plot an interactive scatter plot of the association between the loan amount requested and the annual income of the borrower. Discuss the plot. What can you tell about the association?
 ```{r}
